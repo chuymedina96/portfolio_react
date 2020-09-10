@@ -1,0 +1,157 @@
+{
+  "main": {
+    "name": "Jesus Medina",
+    "occupation": "Fullstack ReactJS Developer with a year of professional DevOps experience",
+    "description": "I am also a practitioner of client and customer advocacy with experience maintaining modern, containerized applications for Fortune 500 companies. Shipped and open-sourced multiple applications for the civic betterment of Chicago.",
+    "image": "meSun.jpg",
+    "bio": "My name is Jesus Medina, I'm a Full Stack ReactJS Developer. Currently freelancing and participating in a software engineering apprenticeship to sharpen my skills even more.",
+    "contactmessage": "Get in touch with me if you want to talk!",
+    "email": "chuymedina96@gmail.com",
+    "phone": "733-951-1650",
+    "address": {
+      "city": "Chicago",
+      "state": "IL"
+    },
+    "website": "",
+    "resumedownload": "./JesusMedinaResume1.pdf",
+    "social": [
+      {
+        "name": "linkedin",
+        "url": "https://www.linkedin.com/in/jmedina-creative-software-engineer/",
+        "className": "fa fa-linkedin"
+      },
+      {
+        "name": "github",
+        "url": "https://github.com/chuymedina96",
+        "className": "fa fa-github"
+      }
+    ]
+  },
+  "resume": {
+    "skillmessage": "Short write-up of my skills for employers",
+    "education": [
+      {
+        "school": "Coding Dojo Coding Bootcamp",
+        "degree": "Certificate",
+        "graduated": "November 2019",
+        "description": "Graduated Valedictorian"
+      },
+      {
+        "school": "University of Illinois at Chicago",
+        "degree": "Some College",
+        "graduated": "2014-2015",
+        "description": "Attended the College of Liberal Arts and Sciences for one year."
+      }
+    ],
+    "work": [
+      {
+        "company": "The Difference Engine",
+        "title": "Software Engineering Apprentice",
+        "years": "August 2020 - Present",
+        "description": "Software Engineering Apprentice contributing to an Agile team of developers, projects managers, and designers. Engineering a custom full stack React application for a non-profit in order to reduce their time processing grant applications from 35-40 hrs/week down to 4-5 hrs/week."
+      },
+      {
+        "company": "Dom and Tom Inc.",
+        "title": "Jr DevOps Engineer",
+        "years": "June 2018 - January 2019",
+        "description": "Utilized Docker for containerizing applications for startups/Fortune 500 companies, such as Tyson Foods and Pfizer Inc. Provisioned and deployed containers using Rancher Server. Assisted in provisioning staging and production environments on AWS. Performed over 20 application and database migrations for Tyson Foods by utilizing git version control and SQL. Developed an automated process for on-boarding new employees to company by developing a SlackBot for automating GSuite account creation. Applied Terraform scripts for automating the build of system infrastructure on AWS, and MUCH more"
+      },
+      {
+        "company": "Dom and Tom Inc.",
+        "title": "Software Engineering Intern",
+        "years": "June 2017 - January 2018",
+        "description": "Worked with stake holders at a Japanese based marketing company in order to develop a custom PHP based Wordpress application. Advised clients on best hosting services for Wordpress. Wrote production Node.js code for internal tools. Learned how to organize teams using agile methodology. Worked with other clients on developing a tool to help youth in Cook County expunge their records."
+      }
+    ],
+    "skills": [
+      {
+        "name": "ReactJS",
+        "level": "65%"
+      },
+      {
+        "name": "NodeJS",
+        "level": "80%"
+      },
+      {
+        "name": "HTML5",
+        "level": "100%"
+      },
+      {
+        "name": "CSS3",
+        "level": "95%"
+      },
+      {
+        "name": "Javascript",
+        "level": "90%"
+      },
+      {
+        "name": "Python",
+        "level": "90%"
+      },
+      {
+        "name": "Django",
+        "level": "80%"
+      },
+      {
+        "name": "Ruby",
+        "level": "50%"
+      },
+      {
+        "name": "C#",
+        "level": "40%"
+      },
+      {
+        "name": "Git",
+        "level": "85%"
+      },
+      {
+        "name": "PostgreSQL",
+        "level": "80%"
+      },
+      {
+        "name": "MongoDB",
+        "level": "70%"
+      }
+    ]
+  },
+  "portfolio": {
+    "projects": [
+      {
+        "title": "Expunge.io",
+        "category": "Custom Wordpress Application to help youth expunge their records",
+        "image": "expungieo.png",
+        "url": "http://45.79.208.212/"
+      },
+      {
+        "title": "Django Search Engine",
+        "category": "Search Engine where citizens can search for any Chicago Police Officer and leave ratings on interactions",
+        "image": "searchcpd.png",
+        "url": "https://www.searchcpd.io/"
+      },
+      {
+        "title": "Github Frontend Framework Dashboard",
+        "category": "View latest stats per framework so you can decide which one is best.",
+        "image": "githubapi.png",
+        "url": "https://launchpadlabtest.herokuapp.com/"
+      },
+      {
+        "title": "Django Fitness App",
+        "category": "Django app where users can connect with trainers for personalized work-out plans/ meal-plans.",
+        "image": "wellness.png",
+        "url": "http://infinitewellness.herokuapp.com/"
+      }
+    ]
+  },
+  "testimonials": {
+    "testimonials": [
+      {
+        "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+        "user": "Lorem ipsum"
+      },
+      {
+        "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+        "user": "Lorem ipsum"
+      }
+    ]
+  }
+}
