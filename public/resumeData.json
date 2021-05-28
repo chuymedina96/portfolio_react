@@ -1,10 +1,10 @@
 {
   "main": {
     "name": "Jesus Medina",
-    "occupation": "Fullstack ReactJS Developer with a year of professional DevOps experience",
+    "occupation": "Fullstack ReactJS Developer with professional DevOps experience",
     "description": "I am also a practitioner of client and customer advocacy with experience maintaining modern, containerized applications for Fortune 500 companies. Shipped and open-sourced multiple applications for the civic betterment of Chicago.",
     "image": "meSun.jpg",
-    "bio": "My name is Jesus Medina, I'm a Full Stack ReactJS Developer. Currently freelancing and participating in a software engineering apprenticeship to sharpen my skills even more.",
+    "bio": "I’m an engineer who creates well organized and well written code mainly in Python + Javascript. I have recent experience working for a top digital product development agency in Chicago where I picked up many of the latest DevOps practices + tools and performed containerizations of applications using Docker for Fortune 500 clients, such as Tyson and Pfizer. I am experienced with MVC software architecture with direct practical experience in utilizing Django + Node for building APIs, React + React-Native for building UIs, and Mongo + Postgres for storing and querying data. I’ve also graduated Valedictorian from a Coding Dojo Bootcamp where I learned new technologies and improved my engineering skills.",
     "contactmessage": "Get in touch with me if you want to talk!",
     "email": "chuymedina96@gmail.com",
     "phone": "733-951-1650",
@@ -34,7 +34,7 @@
         "school": "Coding Dojo Coding Bootcamp",
         "degree": "Certificate",
         "graduated": "November 2019",
-        "description": "Graduated Valedictorian"
+        "description": "Graduated Valedictorian."
       },
       {
         "school": "University of Illinois at Chicago",
@@ -45,14 +45,20 @@
     ],
     "work": [
       {
+        "company": "LaunchPad Lab",
+        "title": "React Developer",
+        "years": "November 2020 - March 2021",
+        "description": "Designed and developed reusable utility functions and custom UI components using React. Worked with a Ruby on Rails API by implementing serializers to convert model instances to JSON. Coordinated with project managers, senior engineers, and designers."
+      },
+      {
         "company": "The Difference Engine",
-        "title": "Software Engineering Apprentice",
-        "years": "August 2020 - Present",
-        "description": "Software Engineering Apprentice contributing to an Agile team of developers, projects managers, and designers. Engineering a custom full stack React application for a non-profit in order to reduce their time processing grant applications from 35-40 hrs/week down to 4-5 hrs/week."
+        "title": "Software Engineer",
+        "years": "August 2020 - November 2020",
+        "description": "Software Engineering Apprentice contributing to an agile team of developers, project managers, and designers. Contributed back-end architecture to a full stack PERN application for a non-profit in order to reduce their time processing user grant applications from 35-40 hrs/week down to 4-5 hrs/week."
       },
       {
         "company": "Dom and Tom Inc.",
-        "title": "Jr DevOps Engineer",
+        "title": "DevOps Engineer",
         "years": "June 2018 - January 2019",
         "description": "Utilized Docker for containerizing applications for startups/Fortune 500 companies, such as Tyson Foods and Pfizer Inc. Provisioned and deployed containers using Rancher Server. Assisted in provisioning staging and production environments on AWS. Performed over 20 application and database migrations for Tyson Foods by utilizing git version control and SQL. Developed an automated process for on-boarding new employees to company by developing a SlackBot for automating GSuite account creation. Applied Terraform scripts for automating the build of system infrastructure on AWS, and MUCH more"
       },
