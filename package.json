@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+<<<<<<< HEAD
     "express": "^4.17.1",
+=======
+>>>>>>> 3932111897b94dc6ba5cf148b78a957271f89d20
     "jquery": "^3.5.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
