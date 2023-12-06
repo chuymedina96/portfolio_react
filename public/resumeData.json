@@ -1,10 +1,10 @@
 {
   "main": {
-    "name": "Jesus Medina",
-    "occupation": "Fullstack ReactJS Developer with professional DevOps experience",
-    "description": "I am also a practitioner of client and customer advocacy with experience maintaining modern, containerized applications for Fortune 500 companies. Shipped and open-sourced multiple applications for the civic betterment of Chicago.",
-    "image": "meSun.jpg",
-    "bio": "I’m an engineer who creates well organized and well written code mainly in Python + Javascript. I have recent experience working for a top digital product development agency in Chicago where I picked up many of the latest DevOps practices + tools and performed containerizations of applications using Docker for Fortune 500 clients, such as Tyson and Pfizer. I am experienced with MVC software architecture with direct practical experience in utilizing Django + Node for building APIs, React + React-Native for building UIs, and Mongo + Postgres for storing and querying data. I’ve also graduated Valedictorian from a Coding Dojo Bootcamp where I learned new technologies and improved my engineering skills.",
+    "name": "Chuy",
+    "occupation": "Fullstack Software Engineer with several years of professional DevOps Engineering experience",
+    "description": "I'm also a practitioner of client advocacy with experience maintaining modern, containerized applications for Fortune 500 companies. I've also shipped and open-sourced multiple applications for the civic betterment of Chicago.",
+    "image": "me-pic.jpeg",
+    "bio": "I’m a software engineer who creates well-organized and well-written code mainly in Python and Javascript. I have experience working for a top digital product development agency in Chicago where I picked up many of the latest DevOps practices + tools, and performed containerizations of applications using Docker for Fortune 500 clients, such as Tyson and Pfizer. I'm experienced with MVC software architecture with direct practical experience in utilizing Django or Node for mainly building RESTful APIs, React for building UIs, and Postgres for RDMS. I’ve also graduated Valedictorian from a Coding Dojo Bootcamp where I learned new technologies and improved my engineering skills.",
     "contactmessage": "Get in touch with me if you want to talk!",
     "email": "chuymedina96@gmail.com",
     "phone": "733-951-1650",
@@ -13,7 +13,7 @@
       "state": "IL"
     },
     "website": "",
-    "resumedownload": "./JesusMedinaResume1.pdf",
+    "resumedownload": "./Jesus_Medina_Resume_Latest.pdf",
     "social": [
       {
         "name": "linkedin",
@@ -35,15 +35,21 @@
         "degree": "Certificate",
         "graduated": "November 2019",
         "description": "Graduated Valedictorian."
-      },
-      {
-        "school": "University of Illinois at Chicago",
-        "degree": "Some College",
-        "graduated": "2014-2015",
-        "description": "Attended the College of Liberal Arts and Sciences for one year."
       }
     ],
     "work": [
+      {
+        "company": "Smoothstack Inc.",
+        "title": "DevOps Sr. Analyst",
+        "years": "April  2023 - December 2023",
+        "description": "Contracted with Accenture Federal Services(AFS) to provide DevOps services to the Federal Department of Education. Managed production and staging Kubernetes clusters that directly serve the Federal Student Aid system. Assisted in delivering the pilot infrastructure for the new Institute of Education Sciences website."
+      },
+      {
+        "company": "Smoothstack Inc.",
+        "title": "DevOps Engineer",
+        "years": "July 2021 - March 2023",
+        "description": "Responsible for the end-to-end development and deployment of a modern microservices-based containerized application. Developed staging and prod Jenkins continuous integration pipelines for each microservice. Deployed microservices utilizing docker-compose to AWS ECS Kubernetes cluster, and EKS clusters."
+      },
       {
         "company": "LaunchPad Lab",
         "title": "React Developer",
@@ -58,7 +64,7 @@
       },
       {
         "company": "Dom and Tom Inc.",
-        "title": "DevOps Engineer",
+        "title": "DevOps Engineering Intern",
         "years": "June 2018 - January 2019",
         "description": "Utilized Docker for containerizing applications for startups/Fortune 500 companies, such as Tyson Foods and Pfizer Inc. Provisioned and deployed containers using Rancher Server. Assisted in provisioning staging and production environments on AWS. Performed over 20 application and database migrations for Tyson Foods by utilizing git version control and SQL. Developed an automated process for on-boarding new employees to company by developing a SlackBot for automating GSuite account creation. Applied Terraform scripts for automating the build of system infrastructure on AWS, and MUCH more"
       },
@@ -71,23 +77,19 @@
     ],
     "skills": [
       {
-        "name": "ReactJS",
-        "level": "65%"
-      },
-      {
-        "name": "NodeJS",
-        "level": "80%"
-      },
-      {
-        "name": "HTML5",
-        "level": "100%"
-      },
-      {
-        "name": "CSS3",
+        "name": "Docker",
         "level": "95%"
       },
       {
-        "name": "Javascript",
+        "name": "Kubernetes",
+        "level": "90%"
+      },
+      {
+        "name": "Openshift",
+        "level": "82%"
+      },
+      {
+        "name": "AWS",
         "level": "90%"
       },
       {
@@ -95,28 +97,28 @@
         "level": "90%"
       },
       {
+        "name": "Ansible",
+        "level": "90%"
+      },
+      {
+        "name": "ReactJS",
+        "level": "75%"
+      },
+      {
+        "name": "NodeJS",
+        "level": "80%"
+      },
+      {
+        "name": "Javascript",
+        "level": "90%"
+      },
+      {
         "name": "Django",
         "level": "80%"
       },
       {
-        "name": "Ruby",
-        "level": "50%"
-      },
-      {
-        "name": "C#",
-        "level": "40%"
-      },
-      {
-        "name": "Git",
-        "level": "85%"
-      },
-      {
         "name": "PostgreSQL",
         "level": "80%"
-      },
-      {
-        "name": "MongoDB",
-        "level": "70%"
       }
     ]
   },
