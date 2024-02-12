@@ -40,15 +40,21 @@
     "work": [
       {
         "company": "Smoothstack Inc.",
-        "title": "Sr DevOps Engineer",
+        "title": "DevOps Sr. Analyst",
         "years": "April  2023 - December 2023",
         "description": "Contracted with Accenture Federal Services(AFS) to provide DevOps services to the Federal Department of Education. Managed production and staging Kubernetes clusters that directly serve the Federal Student Aid system. Assisted in delivering the pilot infrastructure for the new Institute of Education Sciences website."
       },
       {
         "company": "Smoothstack Inc.",
         "title": "DevOps Engineer",
-        "years": "July 2021 - March 2023",
+        "years": "March 2022 - March 2023",
         "description": "Responsible for the end-to-end development and deployment of a modern microservices-based containerized application. Developed staging and prod Jenkins continuous integration pipelines for each microservice. Deployed microservices utilizing docker-compose to AWS ECS Kubernetes cluster, and EKS clusters."
+      },
+      {
+        "company": "Smoothstack Inc.",
+        "title": "Cloud Engineering Apprentice",
+        "years": "July 2021 - March 2022",
+        "description": ""
       },
       {
         "company": "LaunchPad Lab",
@@ -64,7 +70,7 @@
       },
       {
         "company": "Dom and Tom Inc.",
-        "title": "Jr DevOps Engineer",
+        "title": "DevOps Engineering Intern",
         "years": "June 2018 - January 2019",
         "description": "Utilized Docker for containerizing applications for startups/Fortune 500 companies, such as Tyson Foods and Pfizer Inc. Provisioned and deployed containers using Rancher Server. Assisted in provisioning staging and production environments on AWS. Performed over 20 application and database migrations for Tyson Foods by utilizing git version control and SQL. Developed an automated process for on-boarding new employees to company by developing a SlackBot for automating GSuite account creation. Applied Terraform scripts for automating the build of system infrastructure on AWS, and MUCH more"
       },
