@@ -131,28 +131,10 @@
   "portfolio": {
     "projects": [
       {
-        "title": "Expunge.io",
-        "category": "Custom Wordpress Application to help youth expunge their records",
-        "image": "expungieo.png",
-        "url": "https://github.com/chuymedina96/expungeio-mikva"
-      },
-      {
         "title": "Django Search Engine",
         "category": "Search Engine where citizens can search for any Chicago Police Officer and leave ratings on interactions",
         "image": "searchcpd.png",
         "url": "https://www.searchcpd.io/"
-      },
-      {
-        "title": "Github Frontend Framework Dashboard",
-        "category": "View latest stats per framework so you can decide which one is best.",
-        "image": "githubapi.png",
-        "url": "https://github.com/chuymedina96/front-end-framework_voting-app/tree/master"
-      },
-      {
-        "title": "Django Fitness App",
-        "category": "Django app where users can connect with trainers for personalized work-out plans/ meal-plans.",
-        "image": "wellness.png",
-        "url": "https://github.com/chuymedina96/django_fitness_app"
       }
     ]
   },
