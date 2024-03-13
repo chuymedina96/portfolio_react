@@ -40,21 +40,15 @@
     "work": [
       {
         "company": "Smoothstack Inc.",
-        "title": "DevOps Sr. Analyst",
-        "years": "April  2023 - December 2023",
+        "title": "Sr DevOps Engineer",
+        "years": "March  2023 - December 2023",
         "description": "Contracted with Accenture Federal Services(AFS) to provide DevOps services to the Federal Department of Education. Managed production and staging Kubernetes clusters that directly serve the Federal Student Aid system. Assisted in delivering the pilot infrastructure for the new Institute of Education Sciences website."
       },
       {
         "company": "Smoothstack Inc.",
         "title": "DevOps Engineer",
-        "years": "March 2022 - March 2023",
+        "years": "July 2021 - March 2023",
         "description": "Responsible for the end-to-end development and deployment of a modern microservices-based containerized application. Developed staging and prod Jenkins continuous integration pipelines for each microservice. Deployed microservices utilizing docker-compose to AWS ECS Kubernetes cluster, and EKS clusters."
-      },
-      {
-        "company": "Smoothstack Inc.",
-        "title": "Cloud Engineering Apprentice",
-        "years": "July 2021 - March 2022",
-        "description": ""
       },
       {
         "company": "LaunchPad Lab",
@@ -77,7 +71,7 @@
       {
         "company": "Dom and Tom Inc.",
         "title": "Software Engineering Intern",
-        "years": "June 2017 - January 2018",
+        "years": "June 2017 - December 2017",
         "description": "Worked with stake holders at a Japanese based marketing company in order to develop a custom PHP based Wordpress application. Advised clients on best hosting services for Wordpress. Wrote production Node.js code for internal tools. Learned how to organize teams using agile methodology. Worked with other clients on developing a tool to help youth in Cook County expunge their records."
       }
     ],
