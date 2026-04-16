@@ -1,84 +1,104 @@
-import React, { Component } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-class Resume extends Component {
-  render() {
+// Animate skill bars when they scroll into view
+const SkillBar = ({ name, level }) => {
+  const fillRef = useRef(null);
 
-    if(this.props.data){
-      var skillmessage = this.props.data.skillmessage;
-      var education = this.props.data.education.map(function(education){
-        return <div key={education.school}>
-                <h3>{education.school}</h3>
-                <p className="info">{education.degree} 
-                  <span>&bull;</span>
-                  <em className="date">{education.graduated}</em>
-                </p>
-                <p>{education.description}</p>
-              </div>
-      })
-      var work = this.props.data.work.map(function(work){
-        return <div key={work.company}><h3>{work.company}</h3>
-            <p className="info">{work.title}<span>&bull;</span> <em className="date">{work.years}</em></p>
-            <p>{work.description}</p>
-        </div>
-      })
-      var skills = this.props.data.skills.map(function(skills){
-        var className = 'bar-expand '+skills.name.toLowerCase();
-        return <li key={skills.name}><span style={{width:skills.level}}className={className}></span><em>{skills.name}</em></li>
-      })
-    }
-
-    return (
-      <section id="resume">
-
-      <div className="row education">
-         <div className="three columns header-col">
-            <h1><span>Education</span></h1>
-         </div>
-
-         <div className="nine columns main-col">
-            <div className="row item">
-               <div className="twelve columns">
-                 {education}
-               </div>
-            </div>
-         </div>
-      </div>
-
-
-      <div className="row work">
-
-         <div className="three columns header-col">
-            <h1><span>Work</span></h1>
-         </div>
-
-         <div className="nine columns main-col">
-          {work}
-        </div>
-    </div>
-
-
-
-      <div className="row skill">
-
-         <div className="three columns header-col">
-            <h1><span>Skills</span></h1>
-         </div>
-
-         <div className="nine columns main-col">
-
-            <p>{skillmessage}
-            </p>
-
-				<div className="bars">
-				   <ul className="skills">
-					  {skills}
-					</ul>
-				</div>
-			</div>
-      </div>
-   </section>
+  useEffect(() => {
+    const el = fillRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.style.width = level;
+          obs.unobserve(el);
+        }
+      },
+      { threshold: 0.3 },
     );
-  }
-}
+    obs.observe(el.parentElement);
+    return () => obs.disconnect();
+  }, [level]);
+
+  return (
+    <div className="skill-item reveal">
+      <div className="skill-header">
+        <span className="skill-name">{name}</span>
+        <span className="skill-level">{level}</span>
+      </div>
+      <div className="skill-track">
+        <div ref={fillRef} className="skill-fill" style={{ width: 0 }} />
+      </div>
+    </div>
+  );
+};
+
+const Resume = ({ data }) => {
+  if (!data) return null;
+
+  const { education = [], work = [], skills = [] } = data;
+
+  return (
+    <section id="resume">
+      <div className="section-inner">
+
+        <p className="section-tag reveal">Career Log</p>
+        <h2 className="section-title reveal reveal-delay-1">
+          Mission <span>History</span>
+        </h2>
+
+        <div className="resume-grid">
+
+          {/* ── Left col: Education + Work ── */}
+          <div>
+            {/* Education */}
+            <div className="reveal reveal-delay-2" style={{ marginBottom: '48px' }}>
+              <h3 className="resume-col-title">Academy Records</h3>
+              <div className="timeline">
+                {education.map(e => (
+                  <div key={e.school} className="timeline-item">
+                    <div className="timeline-company">{e.school}</div>
+                    <div className="timeline-role">{e.degree}</div>
+                    <div className="timeline-years">{e.graduated}</div>
+                    <div className="timeline-desc">{e.description}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Work */}
+            <div>
+              <h3 className="resume-col-title reveal reveal-delay-2">Mission Deployments</h3>
+              <div className="timeline">
+                {work.map((w, i) => (
+                  <div
+                    key={w.company + w.years}
+                    className={`timeline-item reveal reveal-delay-${Math.min(i + 2, 4)}`}
+                  >
+                    <div className="timeline-company">{w.company}</div>
+                    <div className="timeline-role">{w.title}</div>
+                    <div className="timeline-years">{w.years}</div>
+                    <div className="timeline-desc">{w.description}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right col: Skills ── */}
+          <div>
+            <h3 className="resume-col-title reveal reveal-delay-2">System Capabilities</h3>
+            <div className="skills-list">
+              {skills.map(s => (
+                <SkillBar key={s.name} name={s.name} level={s.level} />
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+};
 
 export default Resume;

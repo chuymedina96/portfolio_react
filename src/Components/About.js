@@ -1,52 +1,67 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-class About extends Component {
-  render() {
+const About = ({ data }) => {
+  if (!data) return null;
 
-    if(this.props.data){
-      var name = this.props.data.name;
-      var profilepic= "images/"+this.props.data.image;
-      var bio = this.props.data.bio;
-      var city = this.props.data.address.city;
-      var state = this.props.data.address.state;
-      var phone= this.props.data.phone;
-      var email = this.props.data.email;
-      var resumeDownload = this.props.data.resumedownload;
-    }
+  const { name, image, bio, address, phone, email, resumedownload } = data;
+  const profilePic = `images/${image}`;
 
-    return (
-      <section id="about">
-         <div className="row">
-            <div className="three columns">
-               <img className="profile-pic"  src={profilepic} alt="Jesus Medina Pic" />
+  return (
+    <section id="about">
+      <div className="section-inner">
+
+        <p className="section-tag reveal">Commander Profile</p>
+        <h2 className="section-title reveal reveal-delay-1">
+          About <span>Me</span>
+        </h2>
+
+        <div className="about-grid">
+
+          {/* Left — profile card */}
+          <div className="profile-card reveal reveal-delay-2">
+            <div className="profile-pic-wrapper">
+              <img className="profile-pic" src={profilePic} alt={`${name} profile`} />
             </div>
-            <div className="nine columns main-col">
-               <h2>About Me</h2>
-
-               <p>{bio}</p>
-               <div className="row">
-                  <div className="columns contact-details">
-                     <h2>Contact Details</h2>
-                     <p className="address">
-                        <span>{name}</span><br />
-                        <span>
-                              {city}, {state}
-                     </span><br />
-                        <span>{phone}</span><br />
-                        <span>{email}</span>
-                     </p>
-                  </div>
-                  <div className="columns download">
-                     <p>
-                        <a href={resumeDownload} className="button"><i className="fa fa-download"></i>Download Resume</a>
-                     </p>
-                  </div>
-               </div>
+            <div className="profile-status">
+              <div className="status-dot" />
+              <span>Available for hire</span>
             </div>
-         </div>
-      </section>
-    );
-  }
-}
+          </div>
+
+          {/* Right — bio + contact */}
+          <div>
+            <div className="about-bio-section reveal reveal-delay-2">
+              <h2>Bio</h2>
+              <p>{bio}</p>
+            </div>
+
+            <div className="contact-grid reveal reveal-delay-3">
+              <div className="glass-card contact-item">
+                <div className="contact-item-label">Location</div>
+                <div className="contact-item-value">{address?.city}, {address?.state}</div>
+              </div>
+              <div className="glass-card contact-item">
+                <div className="contact-item-label">Phone</div>
+                <div className="contact-item-value">{phone}</div>
+              </div>
+              <div className="glass-card contact-item" style={{ gridColumn: '1 / -1' }}>
+                <div className="contact-item-label">Email</div>
+                <div className="contact-item-value">{email}</div>
+              </div>
+            </div>
+
+            <div className="reveal reveal-delay-4">
+              <a href={resumedownload} className="btn-mission" download>
+                <i className="fa fa-download" />
+                Access Mission File
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+};
 
 export default About;

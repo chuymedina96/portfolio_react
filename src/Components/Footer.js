@@ -1,29 +1,27 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-class Footer extends Component {
-  render() {
+const Footer = ({ data }) => {
+  const networks = (data?.social || []).map(n => (
+    <li key={n.name}>
+      <a href={n.url} target="_blank" rel="noopener noreferrer" aria-label={n.name}>
+        <i className={n.className} />
+      </a>
+    </li>
+  ));
 
-    if(this.props.data){
-      var networks= this.props.data.social.map(function(network){
-        return <li key={network.name}><a href={network.url}><i className={network.className}></i></a></li>
-      })
-    }
-
-    return (
-      <footer>
-
-     <div className="row">
-        <div className="twelve columns">
-           <ul className="social-links">
-              {networks}
-           </ul>
-
-        </div>
-        <div id="go-top"><a className="smoothscroll" title="Back to Top" href="#home"><i className="icon-up-open"></i></a></div>
-     </div>
-  </footer>
-    );
-  }
-}
+  return (
+    <footer>
+      <div className="footer-inner">
+        <ul className="footer-socials">{networks}</ul>
+        <span className="footer-copy">
+          &copy; {new Date().getFullYear()} Jesus Medina
+        </span>
+        <a href="#home" className="footer-back">
+          ↑ Back to orbit
+        </a>
+      </div>
+    </footer>
+  );
+};
 
 export default Footer;

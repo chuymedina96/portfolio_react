@@ -1,54 +1,61 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-class Header extends Component {
-  render() {
+const Header = ({ data }) => {
+  const name = data?.name        || 'Chuy';
+  const desc = data?.description || '';
+  const networks = (data?.social || []).map(n => (
+    <li key={n.name}>
+      <a href={n.url} target="_blank" rel="noopener noreferrer" aria-label={n.name}>
+        <i className={n.className} />
+      </a>
+    </li>
+  ));
 
-    if(this.props.data){
-      var name = this.props.data.name;
-      var occupation= this.props.data.occupation;
-      var description= this.props.data.description;
-      var city= this.props.data.address.city;
-      var networks= this.props.data.social.map(function(network){
-        return <li key={network.name}><a href={network.url}><i className={network.className}></i></a></li>
-      })
-    }
+  return (
+    <header id="home">
 
-    return (
-      <header id="home">
-
-      <nav id="nav-wrap">
-
-         <a className="mobile-btn" href="#nav-wrap" title="Show navigation">Show navigation</a>
-	      <a className="mobile-btn" href="#home" title="Hide navigation">Hide navigation</a>
-
-         <ul id="nav" className="nav">
-            <li className="current"><a className="smoothscroll" href="#home">Home</a></li>
-            <li><a className="smoothscroll" href="#about">About</a></li>
-	         <li><a className="smoothscroll" href="#resume">Resume</a></li>
-            <li><a className="smoothscroll" href="#portfolio">Works</a></li>
-            <li><a className="smoothscroll" href="#contact">Contact</a></li>
-         </ul>
-
+      {/* ── Navigation ── */}
+      <nav id="nav-wrap" role="navigation" aria-label="Main navigation">
+        <ul id="nav" className="nav">
+          <li className="current"><a href="#home">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#resume">Resume</a></li>
+          <li><a href="#portfolio">Works</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
       </nav>
 
-      <div className="row banner">
-         <div className="banner-text">
-            <h1 className="responsive-headline">Hi, I'm {name} &#129312;</h1>
-            <h3>I'm a {city} based <span>{occupation}</span>. {description}</h3>
-            <hr />
-            <ul className="social">
-               {networks}
-            </ul>
-         </div>
+      {/* ── Hero content ── */}
+      <div className="hero-content">
+        <p className="hero-label" style={{ animationDelay: '0.2s' }}>
+          Mission Control — Chicago, IL
+        </p>
+
+        <h1 className="hero-name">
+          Hi, I'm {name}
+        </h1>
+
+        <p className="hero-title">
+          <span>Fullstack Engineer</span> &amp; DevOps Specialist
+        </p>
+
+        <p className="hero-sub">{desc}</p>
+
+        <div className="hero-divider" />
+
+        <ul className="hero-socials">
+          {networks}
+        </ul>
       </div>
 
-      <p className="scrolldown">
-         <a className="smoothscroll" href="#about"><i className="icon-down-circle"></i></a>
-      </p>
+      {/* ── Scroll indicator ── */}
+      <div className="scroll-indicator">
+        <span>Engage Thrusters</span>
+        <i className="fa fa-chevron-down" />
+      </div>
 
-   </header>
-    );
-  }
-}
+    </header>
+  );
+};
 
 export default Header;
