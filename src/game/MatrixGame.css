@@ -1,0 +1,684 @@
+/* ── Keyframes ─────────────────────────────────────────────────────────────── */
+@keyframes mxFlash    { from { opacity: 1 } to { opacity: 0 } }
+@keyframes mxTextIn   { from { opacity: 0; transform: translate(-50%, -50%) scale(1.25) } to { opacity: 1; transform: translate(-50%, -50%) scale(1) } }
+@keyframes btPulse    { from { opacity: 0.65 } to { opacity: 1 } }
+@keyframes kickRing   { 0% { width: 0; height: 0; border-width: 8px; opacity: 1 } 100% { width: 340px; height: 340px; border-width: 2px; opacity: 0 } }
+@keyframes kickText   { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.4) } 60% { opacity: 1; transform: translate(-50%, -50%) scale(1) } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.85) } }
+@keyframes tutFadeIn  { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes scanline   { 0% { transform: translateY(-100%) } 100% { transform: translateY(100vh) } }
+
+/* ── Root ──────────────────────────────────────────────────────────────────── */
+.mx-root {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background: #010e03;
+}
+
+/* ── Shared overlay base ───────────────────────────────────────────────────── */
+.mx-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ── Flash overlays ────────────────────────────────────────────────────────── */
+.mx-caught    { z-index: 500; background: rgba(0, 255, 65, 0.09); animation: mxFlash 0.12s ease-in-out 5 alternate; }
+.mx-hit       { z-index: 502; background: rgba(255, 50, 0, 0.32); animation: mxFlash 0.1s ease-in-out 3 alternate; }
+.mx-punch-hit { z-index: 501; background: rgba(255, 200, 0, 0.18); animation: mxFlash 0.08s ease-in-out 2 alternate; }
+.mx-dodge-flash { z-index: 499; background: rgba(0, 220, 255, 0.10); animation: mxFlash 0.16s ease-out 3 alternate; }
+
+/* ── Agent spawn alert ─────────────────────────────────────────────────────── */
+.mx-agent-alert { z-index: 503; }
+
+.mx-agent-alert__flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 255, 65, 0.07);
+  animation: mxFlash 0.15s ease-in-out 3 alternate;
+}
+
+.mx-agent-alert__text {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(1rem, 2.8vw, 1.8rem);
+  color: #00ff41;
+  text-shadow: 0 0 30px #00ff41;
+  letter-spacing: 0.28em;
+  animation: mxTextIn 0.25s ease;
+  white-space: nowrap;
+}
+
+/* ── Neo health bar ────────────────────────────────────────────────────────── */
+.mx-health {
+  position: fixed;
+  bottom: 24px;
+  left: 22px;
+  z-index: 15;
+  pointer-events: none;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.mx-health__label {
+  font-size: 0.72rem;
+  color: rgba(200, 255, 200, 0.7);
+  letter-spacing: 0.15em;
+  margin-bottom: 5px;
+  text-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+}
+
+.mx-health__track {
+  width: 160px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 255, 65, 0.25);
+}
+
+.mx-health__fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.15s ease, background 0.3s ease;
+}
+
+/* ── Death screen ──────────────────────────────────────────────────────────── */
+.mx-death {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.mx-death__title {
+  font-size: clamp(1.4rem, 4.5vw, 2.8rem);
+  color: #ff2200;
+  text-shadow: 0 0 40px #ff2200;
+  letter-spacing: 0.25em;
+}
+
+.mx-death__subtitle {
+  font-size: clamp(0.8rem, 1.8vw, 1rem);
+  color: rgba(255, 120, 100, 0.75);
+  letter-spacing: 0.18em;
+}
+
+.mx-death__btn {
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid #00ff41;
+  color: #00ff41;
+  font-family: inherit;
+  font-size: clamp(0.85rem, 1.6vw, 1rem);
+  letter-spacing: 0.2em;
+  padding: 12px 36px;
+  cursor: pointer;
+  text-shadow: 0 0 10px #00ff41;
+  box-shadow: 0 0 12px rgba(0, 255, 65, 0.2);
+}
+
+.mx-death__btn:hover { background: rgba(0, 255, 65, 0.08); }
+
+/* ── Kick impact overlay ───────────────────────────────────────────────────── */
+.mx-kick { z-index: 504; }
+
+.mx-kick__flash {
+  position: absolute; inset: 0;
+  background: rgba(255, 255, 255, 0.42);
+  animation: mxFlash 0.06s ease-out 1;
+}
+
+.mx-kick__ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 0; height: 0;
+  border: 0px solid #00ff41;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: kickRing 0.28s ease-out forwards;
+  box-shadow: 0 0 30px #00ff41;
+  pointer-events: none;
+}
+
+.mx-kick__text {
+  position: absolute;
+  top: 44%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(1.6rem, 4.5vw, 3.2rem);
+  color: #00ff41;
+  text-shadow: 0 0 30px #00ff41, 0 0 60px #00ff41;
+  letter-spacing: 0.3em;
+  font-weight: bold;
+  animation: kickText 0.32s ease-out forwards;
+  white-space: nowrap;
+}
+
+/* ── Bullet time overlay ───────────────────────────────────────────────────── */
+.mx-bt { z-index: 6; }
+
+.mx-bt__bar-track {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 4px;
+  background: rgba(0, 200, 255, 0.12);
+}
+
+.mx-bt__bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0055ff, #00aaff, #00ffcc);
+  box-shadow: 0 0 14px #00ccff, 0 0 30px #0066ff;
+  transition: width 0.1s linear;
+}
+
+.mx-bt__label {
+  position: absolute;
+  top: 16px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.8rem, 1.8vw, 1rem);
+  letter-spacing: 0.28em;
+  color: #00ddff;
+  text-shadow: 0 0 20px #00aaff, 0 0 50px #0055ff;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mx-bt__vignette-side {
+  position: absolute; inset: 0;
+  box-shadow: inset 8px 0 40px rgba(220, 0, 0, 0.14), inset -8px 0 40px rgba(0, 40, 220, 0.14);
+}
+
+.mx-bt__vignette-radial {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 28%, rgba(0, 60, 220, 0.14) 100%);
+  box-shadow: inset 0 0 140px rgba(0, 120, 255, 0.20);
+}
+
+.mx-bt__scanlines {
+  position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0, 160, 255, 0.025) 3px, rgba(0, 160, 255, 0.025) 4px);
+}
+
+/* ── Key collected overlay ─────────────────────────────────────────────────── */
+.mx-key-collected { z-index: 510; }
+
+.mx-key-collected__flash {
+  position: absolute; inset: 0;
+  background: rgba(200, 0, 0, 0.12);
+  animation: mxFlash 0.2s ease-in-out 4 alternate;
+}
+
+.mx-key-collected__text {
+  position: absolute;
+  top: 38%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(1.1rem, 3.2vw, 2.1rem);
+  color: #ff4422;
+  text-shadow: 0 0 40px #ff2200, 0 0 80px #cc0000;
+  letter-spacing: 0.24em;
+  animation: mxTextIn 0.3s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.mx-key-collected__sub {
+  font-size: 0.7em;
+  color: rgba(255, 160, 120, 0.85);
+  letter-spacing: 0.18em;
+}
+
+/* ── Flying HUD ────────────────────────────────────────────────────────────── */
+.mx-flying { z-index: 7; }
+
+.mx-flying__title {
+  position: absolute;
+  top: 24px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.78rem, 1.8vw, 0.95rem);
+  letter-spacing: 0.26em;
+  color: #6688ff;
+  text-shadow: 0 0 20px #4466ff, 0 0 40px #2244cc;
+  white-space: nowrap;
+  animation: btPulse 1.2s ease-in-out infinite alternate;
+}
+
+.mx-flying__vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(30, 40, 160, 0.12) 100%);
+  box-shadow: inset 0 0 100px rgba(40, 60, 200, 0.15);
+}
+
+.mx-flying__hint {
+  position: absolute;
+  bottom: 42px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.65rem, 1.4vw, 0.78rem);
+  color: rgba(120, 140, 255, 0.65);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+/* ── Access denied overlay ─────────────────────────────────────────────────── */
+.mx-access-denied { z-index: 501; }
+
+.mx-access-denied__flash {
+  position: absolute; inset: 0;
+  background: rgba(255, 0, 0, 0.1);
+  animation: mxFlash 0.08s ease-in-out 6 alternate;
+}
+
+.mx-access-denied__text {
+  position: absolute;
+  top: 48%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(1.3rem, 4vw, 2.6rem);
+  color: #ff2200;
+  text-shadow: 0 0 40px #ff2200;
+  letter-spacing: 0.25em;
+  animation: mxTextIn 0.2s ease;
+}
+
+/* ── Bullet warn overlay ───────────────────────────────────────────────────── */
+.mx-bullet-warn { z-index: 503; }
+
+.mx-bullet-warn__gradient {
+  position: absolute; inset: 0;
+  animation: mxFlash 0.18s ease-in-out 3 alternate;
+}
+
+.mx-bullet-warn__label {
+  position: absolute;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.78rem, 1.6vw, 0.92rem);
+  letter-spacing: 0.18em;
+  color: #ff3300;
+  text-shadow: 0 0 12px #ff2200;
+  animation: btPulse 0.18s ease-in-out infinite alternate;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+/* ── Near agent prompt ─────────────────────────────────────────────────────── */
+.mx-near-agent {
+  position: fixed;
+  bottom: 96px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+  color: #ffdd00;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 14px #ffaa00;
+  animation: btPulse 0.6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 12;
+}
+
+/* ── Fade overlay ──────────────────────────────────────────────────────────── */
+.mx-fade {
+  position: fixed; inset: 0;
+  z-index: 800;
+  background: #000;
+  transition: opacity 0.45s ease;
+}
+
+/* ── BT cooldown bar ───────────────────────────────────────────────────────── */
+.mx-bt-cd {
+  position: fixed;
+  bottom: 52px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.65rem, 1.4vw, 0.76rem);
+  color: rgba(0, 180, 255, 0.65);
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.mx-bt-cd__track {
+  width: 90px; height: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+}
+
+.mx-bt-cd__fill {
+  height: 100%;
+  background: #0088cc;
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+/* ── Door / terminal prompt ─────────────────────────────────────────────────── */
+.mx-door-prompt {
+  position: fixed;
+  bottom: 76px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+  letter-spacing: 0.18em;
+  animation: btPulse 0.9s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 20;
+  text-transform: uppercase;
+}
+
+.mx-terminal-prompt {
+  position: fixed;
+  bottom: 76px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+  color: #00ff41;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 16px #00ff41;
+  animation: btPulse 0.9s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* ── Reticle ───────────────────────────────────────────────────────────────── */
+@keyframes hitFlash {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(1.4); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+}
+
+.mx-reticle {
+  position: fixed;
+  top: 50%; left: 50%;
+  width: 0; height: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.mx-reticle__line {
+  position: absolute;
+  background: rgba(0, 255, 65, 0.55);
+  box-shadow: 0 0 4px rgba(0, 255, 65, 0.6);
+  transition: transform 0.08s ease-out, opacity 0.08s;
+}
+
+/* top / bottom lines: thin horizontal bars */
+.mx-reticle__line--t,
+.mx-reticle__line--b {
+  width: 8px; height: 2px;
+  left: -4px;
+}
+.mx-reticle__line--t { bottom: 7px; }
+.mx-reticle__line--b { top: 7px; }
+
+/* left / right lines: thin vertical bars */
+.mx-reticle__line--l,
+.mx-reticle__line--r {
+  width: 2px; height: 8px;
+  top: -4px;
+}
+.mx-reticle__line--l { right: 7px; }
+.mx-reticle__line--r { left: 7px; }
+
+/* center dot */
+.mx-reticle__dot {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: rgba(0, 255, 65, 0.9);
+  border-radius: 50%;
+  top: -1.5px; left: -1.5px;
+  box-shadow: 0 0 5px rgba(0, 255, 65, 0.9);
+}
+
+/* spread on shoot */
+.mx-reticle--shooting .mx-reticle__line--t { bottom: 12px; opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
+.mx-reticle--shooting .mx-reticle__line--b { top: 12px;    opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
+.mx-reticle--shooting .mx-reticle__line--l { right: 12px;  opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
+.mx-reticle--shooting .mx-reticle__line--r { left: 12px;   opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
+
+/* hit marker */
+.mx-reticle__hit {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(1.4);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.3rem;
+  color: #ffffff;
+  text-shadow: 0 0 10px #00ff41, 0 0 24px #00ff41;
+  animation: hitFlash 0.28s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ── Red pill indicator ─────────────────────────────────────────────────────── */
+.mx-key-indicator {
+  position: fixed;
+  bottom: 24px; right: 22px;
+  z-index: 15;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.76rem;
+  color: #ff4422;
+  letter-spacing: 0.14em;
+  text-shadow: 0 0 10px #ff2200;
+  pointer-events: none;
+}
+
+/* ── Corridor door list HUD ─────────────────────────────────────────────────── */
+.mx-door-list {
+  position: fixed;
+  top: 20px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  pointer-events: none;
+  z-index: 11;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.mx-door-list__sep {
+  color: rgba(0, 255, 65, 0.25);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.mx-door-list__item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.4);
+  transition: border-color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+
+.mx-door-list__item--locked { opacity: 0.45; }
+
+.mx-door-list__item--active {
+  border-color: color-mix(in srgb, var(--c) 55%, transparent);
+  background: color-mix(in srgb, var(--c) 10%, transparent);
+  opacity: 1;
+}
+
+.mx-door-list__icon {
+  font-size: 0.5rem;
+  color: var(--c);
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.mx-door-list__item--active .mx-door-list__icon { opacity: 1; }
+
+.mx-door-list__name {
+  font-size: clamp(0.55rem, 1.1vw, 0.65rem);
+  letter-spacing: 0.1em;
+  color: rgba(180, 200, 180, 0.5);
+  transition: color 0.2s, text-shadow 0.2s;
+}
+
+.mx-door-list__item--active .mx-door-list__name {
+  color: var(--c);
+  text-shadow: 0 0 10px var(--c);
+}
+
+/* ── Controls hint ──────────────────────────────────────────────────────────── */
+.mx-controls-hint {
+  position: fixed;
+  bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.58rem, 1.1vw, 0.68rem);
+  color: rgba(100, 100, 100, 0.65);
+  letter-spacing: 0.1em;
+  pointer-events: none;
+  z-index: 10;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ── How-to-play tutorial modal ─────────────────────────────────────────────── */
+.mx-tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.93);
+  font-family: 'Share Tech Mono', monospace;
+  /* Subtle scanline layer */
+  background-image: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0, 255, 65, 0.015) 2px, rgba(0, 255, 65, 0.015) 4px
+  );
+}
+
+.mx-tutorial__panel {
+  width: min(720px, 90vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  background: rgba(0, 8, 2, 0.95);
+  padding: clamp(24px, 4vw, 44px);
+  animation: tutFadeIn 0.4s ease;
+  box-shadow: 0 0 60px rgba(0, 255, 65, 0.08), inset 0 0 40px rgba(0, 255, 65, 0.03);
+}
+
+.mx-tutorial__eyebrow {
+  font-size: clamp(0.6rem, 1.2vw, 0.72rem);
+  color: rgba(0, 255, 65, 0.45);
+  letter-spacing: 0.35em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.mx-tutorial__title {
+  font-size: clamp(1.3rem, 3.5vw, 2rem);
+  color: #00ff41;
+  text-shadow: 0 0 30px #00ff41, 0 0 60px rgba(0, 255, 65, 0.3);
+  letter-spacing: 0.18em;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.mx-tutorial__subtitle {
+  font-size: clamp(0.72rem, 1.5vw, 0.85rem);
+  color: rgba(160, 220, 160, 0.6);
+  letter-spacing: 0.12em;
+  margin-bottom: 32px;
+}
+
+.mx-tutorial__divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.3), transparent);
+  margin: 20px 0;
+}
+
+.mx-tutorial__section-title {
+  font-size: clamp(0.62rem, 1.3vw, 0.74rem);
+  color: rgba(0, 255, 65, 0.5);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.mx-tutorial__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+  margin-bottom: 4px;
+}
+
+.mx-tutorial__row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.mx-tutorial__key {
+  font-size: clamp(0.68rem, 1.4vw, 0.8rem);
+  color: #00ffaa;
+  background: rgba(0, 255, 100, 0.07);
+  border: 1px solid rgba(0, 255, 100, 0.2);
+  padding: 2px 7px;
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.08em;
+}
+
+.mx-tutorial__desc {
+  font-size: clamp(0.68rem, 1.4vw, 0.8rem);
+  color: rgba(180, 210, 180, 0.8);
+  letter-spacing: 0.06em;
+}
+
+.mx-tutorial__tip {
+  margin-top: 24px;
+  padding: 14px 18px;
+  border-left: 2px solid rgba(0, 255, 65, 0.35);
+  background: rgba(0, 255, 65, 0.04);
+  font-size: clamp(0.68rem, 1.4vw, 0.78rem);
+  color: rgba(160, 220, 160, 0.75);
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+}
+
+.mx-tutorial__tip strong {
+  color: #00ff41;
+}
+
+.mx-tutorial__start {
+  display: block;
+  width: 100%;
+  margin-top: 32px;
+  padding: 14px 0;
+  background: transparent;
+  border: 1px solid #00ff41;
+  color: #00ff41;
+  font-family: inherit;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+  letter-spacing: 0.28em;
+  cursor: pointer;
+  text-shadow: 0 0 12px #00ff41;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+  transition: background 0.2s, box-shadow 0.2s;
+  text-transform: uppercase;
+}
+
+.mx-tutorial__start:hover {
+  background: rgba(0, 255, 65, 0.07);
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.18);
+}

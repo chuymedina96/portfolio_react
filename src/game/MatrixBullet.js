@@ -71,16 +71,15 @@ export default function MatrixBullet({ id, origin, direction, playerPosRef, crou
 
   return (
     <group ref={groupRef}>
-      {/* Core — bright emissive sphere, no pointLight (expensive per-bullet) */}
+      <pointLight color="#ffcc00" intensity={6} distance={8} decay={2} />
       <mesh>
-        <sphereGeometry args={[0.09, 5, 4]} />
-        <meshStandardMaterial color="#ffffaa" emissive="#ffee00" emissiveIntensity={18} />
+        <sphereGeometry args={[0.13, 6, 4]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffdd00" emissiveIntensity={22} />
       </mesh>
-      {/* Single trail cone along -Z */}
-      <mesh position={[0, 0, -0.7]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.01, 0.07, 1.4, 4]} />
-        <meshStandardMaterial color="#ff7700" emissive="#ff4400" emissiveIntensity={6}
-          transparent opacity={0.5} depthWrite={false} />
+      <mesh position={[0, 0, -1.1]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.01, 0.10, 2.2, 4]} />
+        <meshStandardMaterial color="#ff6600" emissive="#ff4400" emissiveIntensity={8}
+          transparent opacity={0.65} depthWrite={false} />
       </mesh>
     </group>
   );

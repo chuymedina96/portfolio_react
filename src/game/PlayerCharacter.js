@@ -14,8 +14,9 @@ const WALL_CD       = 0.35;   // seconds before same wall can be re-jumped
 const CAM_DIST      = 5.2;
 const CAM_H         = 2.6;
 const CAM_LOOK      = 1.3;
-const PUNCH_DUR     = 0.26;
-const KICK_DUR      = 0.38;
+const PUNCH_DUR      = 0.26;
+const KICK_DUR       = 0.38;
+const SPIN_KICK_DUR  = 0.68;
 
 const _fwd    = new THREE.Vector3();
 const _right  = new THREE.Vector3();
@@ -41,8 +42,8 @@ function NeoBody({ stateRef }) {
     const wa = s.moving ? (s.running ? 0.55 : 0.40) : 0;
 
     // Walk legs
-    if (lLeg.current && !s.kicking) lLeg.current.rotation.x  =  Math.sin(wf) * wa;
-    if (rLeg.current && !s.kicking) rLeg.current.rotation.x  = -Math.sin(wf) * wa;
+    if (lLeg.current && !s.kicking && !s.spinKicking) lLeg.current.rotation.x =  Math.sin(wf) * wa;
+    if (rLeg.current && !s.kicking && !s.spinKicking) rLeg.current.rotation.x = -Math.sin(wf) * wa;
 
     // Jab / cross (alternate arms)
     const pAmp = -Math.PI * 0.92 * Math.sin(s.punchT * Math.PI);
@@ -50,23 +51,31 @@ function NeoBody({ stateRef }) {
       // Flying: arms spread wide like Neo soaring
       const flyTgtX = s.flying ? Math.PI * 0.28 : 0;
       const flyTgtZ = s.flying ? 0.9 : 0;
-      const tgt = s.flying ? flyTgtX : (s.punching && s.altArm === 1) ? pAmp : -Math.sin(wf) * wa * 0.5;
-      lArm.current.rotation.x = THREE.MathUtils.lerp(lArm.current.rotation.x, tgt, 0.12);
+      // Roundhouse: left arm raises as a guard/balance (spin kick overrides in its own block)
+      const rhGuardX = (s.kicking && !s.flyKick) ? -Math.PI * 0.55 : 0;
+      const tgt = s.spinKicking ? lArm.current.rotation.x  // spin kick handles its own arms
+        : s.flying ? flyTgtX : (s.punching && s.altArm === 1) ? pAmp : (s.kicking && !s.flyKick) ? rhGuardX : -Math.sin(wf) * wa * 0.5;
+      lArm.current.rotation.x = THREE.MathUtils.lerp(lArm.current.rotation.x, tgt, 0.18);
       lArm.current.rotation.z = THREE.MathUtils.lerp(lArm.current.rotation.z,
-        s.flying ? flyTgtZ : (s.kicking && s.flyKick) ? 0.45 : 0, 0.12);
+        s.spinKicking ? lArm.current.rotation.z
+        : s.flying ? flyTgtZ : (s.kicking && s.flyKick) ? 0.45 : (s.kicking ? 0.35 : 0), 0.18);
     }
     if (rArm.current) {
       // During flying kick, both arms spread wide for balance
       const kickSpread = (s.kicking && s.flyKick) ? Math.PI * 0.35 : 0;
       const flyTgtX = s.flying ? Math.PI * 0.28 : 0;
-      const tgt = s.flying ? flyTgtX
-        : s.kicking ? kickSpread
+      // Roundhouse: right arm pulls back (spin kick overrides in its own block)
+      const rhKickTgt = (s.kicking && !s.flyKick) ? Math.PI * 0.45 : kickSpread;
+      const tgt = s.spinKicking ? rArm.current.rotation.x  // spin kick handles its own arms
+        : s.flying ? flyTgtX
+        : s.kicking ? rhKickTgt
         : (s.punching && s.altArm === 0) ? pAmp : Math.sin(wf) * wa * 0.5;
-      rArm.current.rotation.x = THREE.MathUtils.lerp(rArm.current.rotation.x, tgt, 0.12);
+      rArm.current.rotation.x = THREE.MathUtils.lerp(rArm.current.rotation.x, tgt, 0.18);
       rArm.current.rotation.z = THREE.MathUtils.lerp(
         rArm.current.rotation.z,
-        s.flying ? -0.9 : (s.kicking && s.flyKick) ? -0.45 : 0,
-        0.12
+        s.spinKicking ? rArm.current.rotation.z
+        : s.flying ? -0.9 : (s.kicking && s.flyKick) ? -0.45 : (s.kicking ? -0.55 : 0),
+        0.18
       );
       if (s.shooting) {
         const sAmp = -Math.PI * 0.7 * Math.sin((s.shootT || 0) * Math.PI);
@@ -74,22 +83,90 @@ function NeoBody({ stateRef }) {
       }
     }
 
-    // Roundhouse kick — big sweep up to near-horizontal, hold, snap back
+    // Roundhouse kick — chamber to side → horizontal sweep → retract
     if (kickR.current) {
       if (s.kicking) {
         const kp = s.kickT;
-        // Phase 0→0.45: sweep up to near-horizontal (−105°)
-        // Phase 0.45→0.6: brief hold at apex (freeze-frame feel)
-        // Phase 0.6→1: snap back
-        let kAng;
-        if (kp < 0.45)      kAng = -(kp / 0.45) * Math.PI * 1.05;
-        else if (kp < 0.60) kAng = -Math.PI * 1.05;
-        else                kAng = -(1 - kp) / 0.4 * Math.PI * 1.05;
-        kickR.current.rotation.x = THREE.MathUtils.lerp(kickR.current.rotation.x, kAng, 0.28);
+        let kx, kz, ky, bodyY;
+
+        if (kp < 0.28) {
+          // Chamber: knee lifts up and out to the right side
+          const p = kp / 0.28;
+          kz    = -p * 1.05;                // swing leg outward
+          kx    = -p * 0.45;               // slight raise
+          ky    =  p * 0.25;               // subtle depth rotation
+          bodyY =  p * 0.5;                // body pivots to load kick
+        } else if (kp < 0.68) {
+          // Sweep: leg whips horizontally from the outside in, rising to near-horizontal
+          const p = (kp - 0.28) / 0.40;
+          kz    = THREE.MathUtils.lerp(-1.05,  0.55, p); // sweep inward past centre
+          kx    = THREE.MathUtils.lerp(-0.45, -Math.PI * 0.80, p); // rise as it sweeps
+          ky    = THREE.MathUtils.lerp( 0.25, -0.18, p);
+          bodyY = THREE.MathUtils.lerp( 0.50,  1.05, p); // follow-through rotation
+        } else {
+          // Retract: snap leg back
+          const p = (kp - 0.68) / 0.32;
+          kz    = THREE.MathUtils.lerp( 0.55, 0, p);
+          kx    = THREE.MathUtils.lerp(-Math.PI * 0.80, 0, p);
+          ky    = THREE.MathUtils.lerp(-0.18, 0, p);
+          bodyY = THREE.MathUtils.lerp( 1.05, 0, p);
+        }
+
+        kickR.current.rotation.x = THREE.MathUtils.lerp(kickR.current.rotation.x, kx, 0.38);
+        kickR.current.rotation.z = THREE.MathUtils.lerp(kickR.current.rotation.z, kz, 0.38);
+        kickR.current.rotation.y = THREE.MathUtils.lerp(kickR.current.rotation.y, ky, 0.30);
+        if (tilt.current) tilt.current.rotation.y = THREE.MathUtils.lerp(tilt.current.rotation.y, bodyY, 0.28);
         if (rLeg.current) rLeg.current.rotation.x = 0;
       } else {
         kickR.current.rotation.x = THREE.MathUtils.lerp(kickR.current.rotation.x, 0, 0.14);
+        kickR.current.rotation.z = THREE.MathUtils.lerp(kickR.current.rotation.z, 0, 0.14);
+        kickR.current.rotation.y = THREE.MathUtils.lerp(kickR.current.rotation.y, 0, 0.14);
       }
+    }
+
+    // ── Spinning hook kick ───────────────────────────────────────────────────────
+    if (s.spinKicking && kickR.current && tilt.current) {
+      const sp = s.spinKickT;
+
+      // Full-body spin: wind-up (counter-rotation), then sweep 1.15 rotations
+      if (sp < 0.10) {
+        const p = sp / 0.10;
+        tilt.current.rotation.y = THREE.MathUtils.lerp(tilt.current.rotation.y, 0.30, 0.30);
+      } else {
+        const p    = (sp - 0.10) / 0.90;
+        const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+        tilt.current.rotation.y = 0.30 - ease * 2.3 * Math.PI;
+      }
+
+      // Kicking leg: rise and hook across body
+      if (sp < 0.28) {
+        const p = sp / 0.28;
+        kickR.current.rotation.x = THREE.MathUtils.lerp(kickR.current.rotation.x, -p * 0.55, 0.32);
+        kickR.current.rotation.z = THREE.MathUtils.lerp(kickR.current.rotation.z, -p * 0.60, 0.32);
+        kickR.current.rotation.y = THREE.MathUtils.lerp(kickR.current.rotation.y,  p * 0.30, 0.28);
+      } else if (sp < 0.74) {
+        const p = (sp - 0.28) / 0.46;
+        kickR.current.rotation.x = THREE.MathUtils.lerp(kickR.current.rotation.x, -0.55 - p * Math.PI * 0.72, 0.42);
+        kickR.current.rotation.z = THREE.MathUtils.lerp(kickR.current.rotation.z, -0.60 + p * 1.50, 0.42); // hook sweeps inward
+        kickR.current.rotation.y = THREE.MathUtils.lerp(kickR.current.rotation.y,  0.30 - p * 0.55, 0.32);
+      } else {
+        kickR.current.rotation.x = THREE.MathUtils.lerp(kickR.current.rotation.x, 0, 0.16);
+        kickR.current.rotation.z = THREE.MathUtils.lerp(kickR.current.rotation.z, 0, 0.16);
+        kickR.current.rotation.y = THREE.MathUtils.lerp(kickR.current.rotation.y, 0, 0.16);
+      }
+
+      // Arms fly wide for spinning momentum, pull in at follow-through
+      const armAmp = sp < 0.75 ? 1.0 : (1 - (sp - 0.75) / 0.25);
+      if (lArm.current) {
+        lArm.current.rotation.x = THREE.MathUtils.lerp(lArm.current.rotation.x, Math.PI * 0.18 * armAmp, 0.22);
+        lArm.current.rotation.z = THREE.MathUtils.lerp(lArm.current.rotation.z, 1.0 * armAmp, 0.22);
+      }
+      if (rArm.current) {
+        rArm.current.rotation.x = THREE.MathUtils.lerp(rArm.current.rotation.x, Math.PI * 0.18 * armAmp, 0.22);
+        rArm.current.rotation.z = THREE.MathUtils.lerp(rArm.current.rotation.z, -1.0 * armAmp, 0.22);
+      }
+
+      if (rLeg.current) rLeg.current.rotation.x = 0;
     }
 
     // Body lean: dodge = sideways, crouch = lean back (Matrix bullet-dodge)
@@ -97,14 +174,17 @@ function NeoBody({ stateRef }) {
       const tz = s.dodging   ? s.dodgeDir * 0.72 : 0;
       const tx = s.flying    ? 0.28
                : s.crouching ? 0.65
-               : s.kicking   ? -0.28
+               : s.kicking   ? -0.22
                : !s.grounded ? -0.14
                : 0;
-      // Snap into dodge lean fast; ease out gently when dodge ends
       const lerpZ = s.dodging ? 0.32 : 0.14;
       const lerpX = s.crouching ? 0.22 : 0.14;
       tilt.current.rotation.z = THREE.MathUtils.lerp(tilt.current.rotation.z, tz, lerpZ);
       tilt.current.rotation.x = THREE.MathUtils.lerp(tilt.current.rotation.x, tx, lerpX);
+      // Reset y when neither kick type is active
+      if (!s.kicking && !s.spinKicking) {
+        tilt.current.rotation.y = THREE.MathUtils.lerp(tilt.current.rotation.y, 0, 0.12);
+      }
     }
 
     // Crouch: lower body
@@ -483,6 +563,14 @@ export default function PlayerCharacter({
       if (stateRef.current.kickT >= 1) {
         stateRef.current.kicking = false;
         stateRef.current.kickT   = 0;
+      }
+    }
+    // Spin kick animation countdown
+    if (stateRef.current.spinKicking) {
+      stateRef.current.spinKickT += dt / SPIN_KICK_DUR;
+      if (stateRef.current.spinKickT >= 1) {
+        stateRef.current.spinKicking = false;
+        stateRef.current.spinKickT   = 0;
       }
     }
     // Shoot animation tick

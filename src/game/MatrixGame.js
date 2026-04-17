@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { AdaptiveDpr } from '@react-three/drei';
+import { AdaptiveDpr, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import WakeUpSequence  from './WakeUpSequence';
 import MatrixRain      from './MatrixRain';
@@ -12,6 +12,7 @@ import AgentSmith      from './AgentSmith';
 import PlayerCharacter from './PlayerCharacter';
 import HUD             from './HUD';
 import { MATRIX_DOORS, ROOM, KEY_POSITION } from './constants';
+import './MatrixGame.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DODGE_SPD   = 22;   // higher launch speed — deceleration does the rest
@@ -78,7 +79,7 @@ function KeyItem({ playerPosRef, onCollect, collected }) {
 }
 
 // ── Player bullet ─────────────────────────────────────────────────────────────
-function PlayerBullet({ id, origin, direction, agentRegistryRef, timeScaleRef, onExpire }) {
+function PlayerBullet({ id, origin, direction, agentRegistryRef, timeScaleRef, onExpire, onAgentHit }) {
   const groupRef = useRef();
   const posRef   = useRef(origin.clone());
   const velRef   = useRef(direction.clone().normalize().multiplyScalar(58));
@@ -116,6 +117,7 @@ function PlayerBullet({ id, origin, direction, agentRegistryRef, timeScaleRef, o
       if (dist < 1.0 && !doneRef.current) {
         agent.takeDamage(28);
         doneRef.current = true;
+        onAgentHit?.();
         onExpire(id);
         return;
       }
@@ -124,20 +126,15 @@ function PlayerBullet({ id, origin, direction, agentRegistryRef, timeScaleRef, o
 
   return (
     <group ref={groupRef}>
+      <pointLight color="#00ff41" intensity={5} distance={7} decay={2} />
       <mesh>
-        <sphereGeometry args={[0.07, 5, 4]} />
-        <meshStandardMaterial color="#ccffcc" emissive="#00ff41" emissiveIntensity={18} />
+        <sphereGeometry args={[0.11, 6, 4]} />
+        <meshStandardMaterial color="#eeffee" emissive="#00ff41" emissiveIntensity={22} />
       </mesh>
-      <mesh position={[0, 0, -0.55]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.008, 0.055, 1.1, 4]} />
-        <meshStandardMaterial
-          color="#00cc33"
-          emissive="#00ff41"
-          emissiveIntensity={7}
-          transparent
-          opacity={0.55}
-          depthWrite={false}
-        />
+      <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.01, 0.08, 1.8, 4]} />
+        <meshStandardMaterial color="#00cc33" emissive="#00ff41" emissiveIntensity={9}
+          transparent opacity={0.65} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -319,6 +316,44 @@ function Scene({
           {MATRIX_DOORS.map(d => (
             <MatrixDoor key={d.id} {...d} isActive={nearDoor?.id === d.id} />
           ))}
+
+          {/* Signs poking into the corridor — readable as player walks toward each door */}
+          {MATRIX_DOORS.map(d => {
+            const cx    = d.side === 'left' ? -3.8 : 3.8;
+            const color = d.locked ? '#ff2200' : d.color;
+            const name  = d.locked
+              ? (d.isRootAccess ? 'ROOT ACCESS' : 'RESTRICTED')
+              : d.sublabel.toUpperCase();
+            return (
+              <group key={`sign-${d.id}`} position={[cx, 5.2, d.position.z]}>
+                {/* Backing plate */}
+                <mesh position={[0, 0, 0]}>
+                  <planeGeometry args={[2.0, 0.52]} />
+                  <meshStandardMaterial color="#000" transparent opacity={0.72} depthWrite={false} />
+                </mesh>
+                {/* Colour accent strip at top */}
+                <mesh position={[0, 0.22, 0.01]}>
+                  <planeGeometry args={[2.0, 0.06]} />
+                  <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+                </mesh>
+                <Billboard follow={true}>
+                  <Text
+                    position={[0, -0.02, 0.02]}
+                    fontSize={0.22}
+                    color={color}
+                    anchorX="center"
+                    anchorY="middle"
+                    outlineWidth={0.018}
+                    outlineColor="#000"
+                    letterSpacing={0.08}
+                  >
+                    {name}
+                  </Text>
+                </Billboard>
+              </group>
+            );
+          })}
+
           <KeyItem playerPosRef={charPosRef} onCollect={onCollectKey} collected={hasKey} />
           {agentEnabled && (
             <AgentSmith
@@ -326,6 +361,7 @@ function Scene({
               spawnOffset={{ z: 22 }}
               spawnDelay={3000}
               shootInterval={3800}
+              firstShotDelay={400}
               playerPosRef={charPosRef}
               dodgeRef={dodgeRef}
               timeScaleRef={timeScaleRef}
@@ -397,48 +433,14 @@ function Scene({
 
 // ── Overlays ──────────────────────────────────────────────────────────────────
 function CaughtOverlay() {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 500,
-        pointerEvents: 'none',
-        background: 'rgba(0,255,65,0.09)',
-        animation: 'mxFlash 0.12s ease-in-out 5 alternate',
-      }}
-    />
-  );
+  return <div className="mx-overlay mx-caught" />;
 }
 
 function AgentSpawnAlert() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 503, pointerEvents: 'none' }}>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0,255,65,0.07)',
-          animation: 'mxFlash 0.15s ease-in-out 3 alternate'
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '22%',
-          left: '50%',
-          transform: 'translate(-50%,-50%)',
-          fontFamily: '"Share Tech Mono", monospace',
-          fontSize: 'clamp(0.9rem, 2.5vw, 1.6rem)',
-          color: '#00ff41',
-          textShadow: '0 0 30px #00ff41',
-          letterSpacing: '0.28em',
-          animation: 'mxTextIn 0.25s ease',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        ▶  AGENT INCOMING
-      </div>
+    <div className="mx-overlay mx-agent-alert">
+      <div className="mx-agent-alert__flash" />
+      <div className="mx-agent-alert__text">▶  AGENT INCOMING</div>
     </div>
   );
 }
@@ -447,44 +449,12 @@ function NeoHealthBar({ hp, maxHp = 100 }) {
   const ratio = Math.max(0, hp / maxHp);
   const hsl   = `hsl(${ratio * 115}, 100%, 45%)`;
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 22,
-        left: 20,
-        zIndex: 15,
-        pointerEvents: 'none',
-        fontFamily: '"Share Tech Mono", monospace',
-      }}
-    >
-      <div
-        style={{
-          fontSize: '0.58rem',
-          color: 'rgba(200,255,200,0.55)',
-          letterSpacing: '0.15em',
-          marginBottom: 4
-        }}
-      >
-        NEO  {hp} / {maxHp}
-      </div>
-      <div
-        style={{
-          width: 130,
-          height: 7,
-          background: 'rgba(0,0,0,0.55)',
-          borderRadius: 3,
-          border: '1px solid rgba(0,255,65,0.2)'
-        }}
-      >
+    <div className="mx-health">
+      <div className="mx-health__label">NEO  {hp} / {maxHp}</div>
+      <div className="mx-health__track">
         <div
-          style={{
-            height: '100%',
-            width: `${ratio * 100}%`,
-            background: hsl,
-            borderRadius: 3,
-            boxShadow: `0 0 6px ${hsl}`,
-            transition: 'width 0.15s ease, background 0.3s ease',
-          }}
+          className="mx-health__fill"
+          style={{ width: `${ratio * 100}%`, background: hsl, boxShadow: `0 0 6px ${hsl}` }}
         />
       </div>
     </div>
@@ -493,135 +463,28 @@ function NeoHealthBar({ hp, maxHp = 100 }) {
 
 function DeathScreen({ onRestart }) {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 900,
-        background: 'rgba(0,0,0,0.88)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 28,
-        fontFamily: '"Share Tech Mono", monospace',
-      }}
-    >
-      <div
-        style={{
-          fontSize: 'clamp(1.2rem, 4vw, 2.4rem)',
-          color: '#ff2200',
-          textShadow: '0 0 40px #ff2200',
-          letterSpacing: '0.25em'
-        }}
-      >
-        SIMULATION TERMINATED
-      </div>
-      <div
-        style={{
-          fontSize: '0.8rem',
-          color: 'rgba(255,100,100,0.6)',
-          letterSpacing: '0.18em'
-        }}
-      >
-        NEO HAS BEEN ELIMINATED
-      </div>
-      <button
-        onClick={onRestart}
-        style={{
-          marginTop: 12,
-          background: 'transparent',
-          border: '1px solid #00ff41',
-          color: '#00ff41',
-          fontFamily: 'inherit',
-          fontSize: '0.85rem',
-          letterSpacing: '0.2em',
-          padding: '10px 32px',
-          cursor: 'pointer',
-          textShadow: '0 0 10px #00ff41',
-          boxShadow: '0 0 12px rgba(0,255,65,0.2)',
-        }}
-      >
-        [ RESTART ]
-      </button>
+    <div className="mx-death">
+      <div className="mx-death__title">SIMULATION TERMINATED</div>
+      <div className="mx-death__subtitle">NEO HAS BEEN ELIMINATED</div>
+      <button className="mx-death__btn" onClick={onRestart}>[ RESTART ]</button>
     </div>
   );
 }
 
 function HitOverlay() {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 502,
-        pointerEvents: 'none',
-        background: 'rgba(255,50,0,0.32)',
-        animation: 'mxFlash 0.1s ease-in-out 3 alternate',
-      }}
-    />
-  );
+  return <div className="mx-overlay mx-hit" />;
 }
 
 function PunchHitOverlay() {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 501,
-        pointerEvents: 'none',
-        background: 'rgba(255,200,0,0.18)',
-        animation: 'mxFlash 0.08s ease-in-out 2 alternate',
-      }}
-    />
-  );
+  return <div className="mx-overlay mx-punch-hit" />;
 }
 
 function KickImpactOverlay() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 504, pointerEvents: 'none' }}>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(255,255,255,0.42)',
-          animation: 'mxFlash 0.06s ease-out 1',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          width: 0,
-          height: 0,
-          border: '0px solid #00ff41',
-          borderRadius: '50%',
-          transform: 'translate(-50%,-50%)',
-          animation: 'kickRing 0.28s ease-out forwards',
-          boxShadow: '0 0 30px #00ff41',
-          pointerEvents: 'none',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '44%',
-          left: '50%',
-          transform: 'translate(-50%,-50%)',
-          fontFamily: '"Share Tech Mono", monospace',
-          fontSize: 'clamp(1.4rem, 4vw, 2.8rem)',
-          color: '#00ff41',
-          textShadow: '0 0 30px #00ff41, 0 0 60px #00ff41',
-          letterSpacing: '0.3em',
-          fontWeight: 'bold',
-          animation: 'kickText 0.32s ease-out forwards',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        IMPACT
-      </div>
+    <div className="mx-overlay mx-kick">
+      <div className="mx-kick__flash" />
+      <div className="mx-kick__ring" />
+      <div className="mx-kick__text">IMPACT</div>
     </div>
   );
 }
@@ -629,108 +492,26 @@ function KickImpactOverlay() {
 function BulletTimeOverlay({ timeLeft, maxTime }) {
   const pct = timeLeft / maxTime;
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 6, pointerEvents: 'none' }}>
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 4,
-          background: 'rgba(0,200,255,0.12)'
-        }}
-      >
-        <div
-          style={{
-            height: '100%',
-            width: `${pct * 100}%`,
-            background: 'linear-gradient(90deg, #0055ff, #00aaff, #00ffcc)',
-            boxShadow: '0 0 14px #00ccff, 0 0 30px #0066ff',
-            transition: 'width 0.1s linear',
-          }}
-        />
+    <div className="mx-overlay mx-bt">
+      <div className="mx-bt__bar-track">
+        <div className="mx-bt__bar-fill" style={{ width: `${pct * 100}%` }} />
       </div>
-      <div
-        style={{
-          position: 'absolute',
-          top: 14,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontFamily: '"Share Tech Mono", monospace',
-          fontSize: '0.78rem',
-          letterSpacing: '0.28em',
-          color: '#00ddff',
-          textShadow: '0 0 20px #00aaff, 0 0 50px #0055ff',
-          textTransform: 'uppercase',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        ◈ BULLET TIME &nbsp; {timeLeft.toFixed(1)}s
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          boxShadow: 'inset 8px 0 40px rgba(220,0,0,0.14), inset -8px 0 40px rgba(0,40,220,0.14)',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(ellipse at center, transparent 28%, rgba(0,60,220,0.14) 100%)',
-          boxShadow: 'inset 0 0 140px rgba(0,120,255,0.20)',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,160,255,0.025) 3px, rgba(0,160,255,0.025) 4px)',
-        }}
-      />
+      <div className="mx-bt__label">◈ BULLET TIME &nbsp; {timeLeft.toFixed(1)}s</div>
+      <div className="mx-bt__vignette-side" />
+      <div className="mx-bt__vignette-radial" />
+      <div className="mx-bt__scanlines" />
     </div>
   );
 }
 
 function KeyCollectedOverlay() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 510, pointerEvents: 'none' }}>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(200,0,0,0.12)',
-          animation: 'mxFlash 0.2s ease-in-out 4 alternate'
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '38%',
-          left: '50%',
-          transform: 'translate(-50%,-50%)',
-          fontFamily: '"Share Tech Mono", monospace',
-          fontSize: 'clamp(1rem, 3vw, 1.9rem)',
-          color: '#ff4422',
-          textShadow: '0 0 40px #ff2200, 0 0 80px #cc0000',
-          letterSpacing: '0.24em',
-          animation: 'mxTextIn 0.3s ease',
-          whiteSpace: 'nowrap',
-          textAlign: 'center',
-        }}
-      >
+    <div className="mx-overlay mx-key-collected">
+      <div className="mx-key-collected__flash" />
+      <div className="mx-key-collected__text">
         ● RED PILL ACQUIRED
         <br />
-        <span
-          style={{
-            fontSize: '0.65em',
-            color: 'rgba(255,150,100,0.75)',
-            letterSpacing: '0.18em'
-          }}
-        >
-          LOCKED DOORS NOW ACCESSIBLE
-        </span>
+        <span className="mx-key-collected__sub">LOCKED DOORS NOW ACCESSIBLE</span>
       </div>
     </div>
   );
@@ -738,78 +519,19 @@ function KeyCollectedOverlay() {
 
 function FlyingHUD() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 7, pointerEvents: 'none' }}>
-      <div
-        style={{
-          position: 'absolute',
-          top: 22,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontFamily: '"Share Tech Mono", monospace',
-          fontSize: '0.72rem',
-          letterSpacing: '0.26em',
-          color: '#6688ff',
-          textShadow: '0 0 20px #4466ff, 0 0 40px #2244cc',
-          whiteSpace: 'nowrap',
-          animation: 'btPulse 1.2s ease-in-out infinite alternate',
-        }}
-      >
-        ◈ ROOT ACCESS — NEO IS FREE
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(ellipse at center, transparent 35%, rgba(30,40,160,0.12) 100%)',
-          boxShadow: 'inset 0 0 100px rgba(40,60,200,0.15)',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 38,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontFamily: '"Share Tech Mono", monospace',
-          fontSize: '0.58rem',
-          color: 'rgba(100,120,255,0.5)',
-          letterSpacing: '0.12em',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        SPACE FLY UP · CTRL FLY DOWN · WASD MOVE
-      </div>
+    <div className="mx-overlay mx-flying">
+      <div className="mx-flying__title">◈ ROOT ACCESS — NEO IS FREE</div>
+      <div className="mx-flying__vignette" />
+      <div className="mx-flying__hint">SPACE FLY UP · CTRL FLY DOWN · WASD MOVE</div>
     </div>
   );
 }
 
 function AccessDeniedOverlay() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 501, pointerEvents: 'none' }}>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(255,0,0,0.1)',
-          animation: 'mxFlash 0.08s ease-in-out 6 alternate'
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '48%',
-          left: '50%',
-          transform: 'translate(-50%,-50%)',
-          fontFamily: '"Share Tech Mono", monospace',
-          fontSize: 'clamp(1.2rem, 3.5vw, 2.4rem)',
-          color: '#ff2200',
-          textShadow: '0 0 40px #ff2200',
-          letterSpacing: '0.25em',
-          animation: 'mxTextIn 0.2s ease',
-        }}
-      >
-        ACCESS DENIED
-      </div>
+    <div className="mx-overlay mx-access-denied">
+      <div className="mx-access-denied__flash" />
+      <div className="mx-access-denied__text">ACCESS DENIED</div>
     </div>
   );
 }
@@ -822,29 +544,14 @@ function BulletWarnOverlay({ angle }) {
   const cy = 50 - R * Math.cos(rad);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 503, pointerEvents: 'none' }}>
+    <div className="mx-overlay mx-bullet-warn">
       <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `radial-gradient(ellipse at ${cx}% ${cy}%, rgba(255,30,0,0.35) 0%, transparent 55%)`,
-          animation: 'mxFlash 0.18s ease-in-out 3 alternate',
-        }}
+        className="mx-bullet-warn__gradient"
+        style={{ background: `radial-gradient(ellipse at ${cx}% ${cy}%, rgba(255,30,0,0.35) 0%, transparent 55%)` }}
       />
       <div
-        style={{
-          position: 'absolute',
-          left: `${cx}%`,
-          top: `${cy}%`,
-          transform: 'translate(-50%,-50%)',
-          fontFamily: '"Share Tech Mono", monospace',
-          fontSize: '0.72rem',
-          letterSpacing: '0.18em',
-          color: '#ff3300',
-          textShadow: '0 0 12px #ff2200',
-          animation: 'btPulse 0.18s ease-in-out infinite alternate',
-          whiteSpace: 'nowrap',
-        }}
+        className="mx-bullet-warn__label"
+        style={{ left: `${cx}%`, top: `${cy}%` }}
       >
         !! DODGE !!
       </div>
@@ -853,40 +560,14 @@ function BulletWarnOverlay({ angle }) {
 }
 
 function NearAgentPrompt() {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 88,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        fontFamily: '"Share Tech Mono", monospace',
-        fontSize: '0.8rem',
-        color: '#ffdd00',
-        letterSpacing: '0.2em',
-        textShadow: '0 0 12px #ffaa00',
-        animation: 'btPulse 0.6s ease-in-out infinite alternate',
-        pointerEvents: 'none',
-        zIndex: 12,
-      }}
-    >
-      [ J ]  STRIKE AGENT
-    </div>
-  );
+  return <div className="mx-near-agent">[ J ]  STRIKE AGENT</div>;
 }
 
 function FadeOverlay({ active }) {
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 800,
-        background: '#000',
-        pointerEvents: active ? 'all' : 'none',
-        opacity: active ? 1 : 0,
-        transition: 'opacity 0.45s ease',
-      }}
+      className="mx-fade"
+      style={{ opacity: active ? 1 : 0, pointerEvents: active ? 'all' : 'none' }}
     />
   );
 }
@@ -904,35 +585,140 @@ function BTCooldownBar({ coolRef, maxCD }) {
   if (pct <= 0) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 46,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        fontFamily: '"Share Tech Mono", monospace',
-        fontSize: '0.62rem',
-        color: 'rgba(0,180,255,0.55)',
-        letterSpacing: '0.12em',
-        pointerEvents: 'none',
-        zIndex: 10,
-      }}
-    >
+    <div className="mx-bt-cd">
       <span>BT</span>
-      <div style={{ width: 80, height: 3, background: 'rgba(0,0,0,0.4)', borderRadius: 2 }}>
-        <div
-          style={{
-            height: '100%',
-            width: `${(1 - pct) * 100}%`,
-            background: '#0088cc',
-            borderRadius: 2,
-            transition: 'width 0.1s linear',
-          }}
-        />
+      <div className="mx-bt-cd__track">
+        <div className="mx-bt-cd__fill" style={{ width: `${(1 - pct) * 100}%` }} />
       </div>
+    </div>
+  );
+}
+
+// ── How-to-play tutorial modal ────────────────────────────────────────────────
+function TutorialModal({ onStart }) {
+  useEffect(() => {
+    const onKey = e => { if (e.code === 'Enter' || e.code === 'Space') onStart(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onStart]);
+
+  const Row = ({ k, desc }) => (
+    <div className="mx-tutorial__row">
+      <span className="mx-tutorial__key">{k}</span>
+      <span className="mx-tutorial__desc">{desc}</span>
+    </div>
+  );
+
+  return (
+    <div className="mx-tutorial">
+      <div className="mx-tutorial__panel">
+        <div className="mx-tutorial__eyebrow">// SYSTEM BRIEFING</div>
+        <div className="mx-tutorial__title">WELCOME TO THE MATRIX</div>
+        <div className="mx-tutorial__subtitle">
+          You are Neo. Walk the corridor, enter doors to explore my portfolio,<br />
+          and survive the Agents.
+        </div>
+
+        <div className="mx-tutorial__divider" />
+
+        <div className="mx-tutorial__section-title">// MOVEMENT</div>
+        <div className="mx-tutorial__grid">
+          <Row k="W A S D"      desc="Move" />
+          <Row k="MOUSE"        desc="Look around" />
+          <Row k="SHIFT"        desc="Sprint" />
+          <Row k="SPACE"        desc="Jump" />
+          <Row k="CTRL"         desc="Crouch / duck" />
+          <Row k="Q / E"        desc="Dodge left / right" />
+        </div>
+
+        <div className="mx-tutorial__divider" />
+
+        <div className="mx-tutorial__section-title">// COMBAT</div>
+        <div className="mx-tutorial__grid">
+          <Row k="CLICK"        desc="Shoot (green tracer)" />
+          <Row k="J"            desc="Punch (combo on repeat)" />
+          <Row k="K"            desc="Roundhouse kick" />
+          <Row k="L"            desc="Spinning hook kick" />
+          <Row k="Z / F"        desc="Bullet Time — slow motion" />
+        </div>
+
+        <div className="mx-tutorial__divider" />
+
+        <div className="mx-tutorial__section-title">// INTERACT</div>
+        <div className="mx-tutorial__grid">
+          <Row k="E"            desc="Enter door / access terminal" />
+          <Row k="E / ESC"      desc="Close modal" />
+          <Row k="RED PILL"     desc="Pick up to unlock locked doors" />
+        </div>
+
+        <div className="mx-tutorial__tip">
+          <strong>TIP:</strong> When an Agent appears and fires at you, activate{' '}
+          <strong>Bullet Time (Z)</strong> — watch the bullet slow down, then dodge{' '}
+          out of the way with <strong>Q</strong> or <strong>E</strong>.{' '}
+          Shoot back with <strong>CLICK</strong> to deal damage.
+        </div>
+
+        <button className="mx-tutorial__start" onClick={onStart}>
+          [ ENTER THE MATRIX ]
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Corridor door list HUD ────────────────────────────────────────────────────
+function CorridorDoorList({ charPosRef, hasKey }) {
+  const [activeIdx, setActiveIdx] = useState(-1);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const z = charPosRef.current.z;
+      let closest = -1;
+      let closestDist = Infinity;
+      MATRIX_DOORS.forEach((d, i) => {
+        const dist = Math.abs(z - d.position.z);
+        if (dist < closestDist) { closestDist = dist; closest = i; }
+      });
+      setActiveIdx(closest);
+    }, 120);
+    return () => clearInterval(id);
+  }, [charPosRef]);
+
+  return (
+    <div className="mx-door-list">
+      {MATRIX_DOORS.map((door, i) => {
+        const isActive  = i === activeIdx;
+        const isLocked  = door.locked;
+        const color     = isLocked ? (hasKey ? '#ff6644' : '#ff2200') : door.color;
+        return (
+          <React.Fragment key={door.id}>
+            {i > 0 && <span className="mx-door-list__sep">›</span>}
+            <div
+              className={`mx-door-list__item${isActive ? ' mx-door-list__item--active' : ''}${isLocked ? ' mx-door-list__item--locked' : ''}`}
+              style={{ '--c': color }}
+            >
+              <span className="mx-door-list__icon">{isLocked ? '▣' : '◆'}</span>
+              <span className="mx-door-list__name">
+                {isLocked ? (door.isRootAccess ? 'ROOT ACCESS' : 'RESTRICTED') : door.sublabel.toUpperCase()}
+              </span>
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Reticle ───────────────────────────────────────────────────────────────────
+function Reticle({ shooting, hit }) {
+  return (
+    <div className={`mx-reticle${shooting ? ' mx-reticle--shooting' : ''}`}>
+      <div className="mx-reticle__line mx-reticle__line--t" />
+      <div className="mx-reticle__line mx-reticle__line--b" />
+      <div className="mx-reticle__line mx-reticle__line--l" />
+      <div className="mx-reticle__line mx-reticle__line--r" />
+      <div className="mx-reticle__dot" />
+      {hit && <div className="mx-reticle__hit">×</div>}
     </div>
   );
 }
@@ -968,6 +754,7 @@ export default function MatrixGame({ resumeData }) {
   const [agentEnabled, setAgentEnabled] = useState(false);
   const [playerBullets, setPlayerBullets] = useState([]);
   const [shootCooldown, setShootCooldown] = useState(false);
+  const [hitMarker, setHitMarker] = useState(false);
 
   const paused = !!openDoor || dead;
 
@@ -996,6 +783,8 @@ export default function MatrixGame({ resumeData }) {
     kicking: false,
     kickT: 0,
     flyKick: false,
+    spinKicking: false,
+    spinKickT: 0,
     dodging: false,
     dodgeDir: 0,
     crouching: false,
@@ -1011,6 +800,7 @@ export default function MatrixGame({ resumeData }) {
   const currentRoomId    = useRef(null);
   const punchCdRef       = useRef(0);
   const kickCdRef        = useRef(0);
+  const spinKickCdRef    = useRef(0);
   const comboCdRef       = useRef(0);
 
   useEffect(() => {
@@ -1052,9 +842,21 @@ export default function MatrixGame({ resumeData }) {
     return () => clearInterval(id);
   }, []);
 
+  const modalWasOpenRef = useRef(false);
   useEffect(() => {
-    if (openDoor) document.exitPointerLock?.();
+    if (openDoor) {
+      modalWasOpenRef.current = true;
+      document.exitPointerLock?.();
+    } else if (modalWasOpenRef.current) {
+      modalWasOpenRef.current = false;
+      setTimeout(() => document.querySelector('canvas')?.requestPointerLock(), 80);
+    }
   }, [openDoor]);
+
+  // Release pointer lock on death so the restart button is immediately clickable
+  useEffect(() => {
+    if (dead) document.exitPointerLock?.();
+  }, [dead]);
 
   const enterRoom = useCallback((door) => {
     if (fading) return;
@@ -1214,6 +1016,37 @@ export default function MatrixGame({ resumeData }) {
         }
       }
 
+      if (e.code === 'KeyL' && spinKickCdRef.current <= 0 && !stateRef.current.punching && !stateRef.current.kicking && !stateRef.current.spinKicking) {
+        const SPIN_RANGE = 4.8;
+        const SPIN_DMG   = 72;
+        const SPIN_KB    = 6.0;
+        let hitAgent = false;
+        const p = charPosRef.current;
+        for (const agent of agentRegistryRef.current) {
+          const ap = agent.posRef.current;
+          const dist = Math.sqrt((p.x - ap.x) ** 2 + (p.z - ap.z) ** 2);
+          if (dist < SPIN_RANGE) {
+            agent.takeDamage(SPIN_DMG);
+            const kbDir = new THREE.Vector3(ap.x - p.x, 0, ap.z - p.z).normalize();
+            agent.knockback?.(kbDir, SPIN_KB);
+            hitAgent = true;
+            break;
+          }
+        }
+        stateRef.current.spinKicking  = true;
+        stateRef.current.spinKickT    = 0;
+        spinKickCdRef.current         = 1.05;
+        if (hitAgent) {
+          setKickFlash(true);
+          setTimeout(() => setKickFlash(false), 420);
+          const prevScale = timeScaleRef.current;
+          if (prevScale >= 0.8) {
+            timeScaleRef.current = 0.03;
+            setTimeout(() => { timeScaleRef.current = prevScale; }, 120);
+          }
+        }
+      }
+
       if ((e.code === 'KeyZ' || e.code === 'KeyF') && !btActive && btCoolRef.current <= 0) {
         btTimerRef.current = BT_DURATION;
         setBtLeft(BT_DURATION);
@@ -1230,6 +1063,7 @@ export default function MatrixGame({ resumeData }) {
     const id = setInterval(() => {
       if (punchCdRef.current > 0) punchCdRef.current -= 0.05;
       if (kickCdRef.current > 0) kickCdRef.current -= 0.05;
+      if (spinKickCdRef.current > 0) spinKickCdRef.current -= 0.05;
       if (comboCdRef.current > 0) comboCdRef.current -= 0.05;
       if (shootCdRef.current > 0) shootCdRef.current -= 0.05;
     }, 50);
@@ -1248,11 +1082,20 @@ export default function MatrixGame({ resumeData }) {
       setTimeout(() => setShootCooldown(false), 320);
 
       const origin = charPosRef.current.clone();
-      origin.y += 1.35;
-      const dir = cameraForwardRef.current.clone().normalize();
+      origin.y += 1.4;
+      // Compute aim direction from yaw + pitch (TPS camera forward points at Neo's back, not forward)
+      const yaw   = yawRef.current;
+      const pitch = pitchRef.current;
+      const dir   = new THREE.Vector3(
+        -Math.sin(yaw) * Math.cos(pitch),
+        -Math.sin(pitch),
+        -Math.cos(yaw) * Math.cos(pitch)
+      ).normalize();
       const id = ++playerBulletIdRef.current;
 
-      setPlayerBullets(prev => [...prev.slice(-5), { id, origin, direction: dir }]);
+      pitchRef.current = Math.min(pitchRef.current + 0.018, 0.42);
+
+      setPlayerBullets(prev => [...prev.slice(-6), { id, origin, direction: dir }]);
       stateRef.current.shooting = true;
       stateRef.current.shootT = 0;
       setTimeout(() => {
@@ -1266,7 +1109,7 @@ export default function MatrixGame({ resumeData }) {
 
   const spawnBullet = useCallback((origin, direction) => {
     const id = ++bulletIdRef.current;
-    setBullets(prev => [...prev.slice(-4), { id, origin: origin.clone(), direction: direction.clone() }]);
+    setBullets(prev => [...prev.slice(-8), { id, origin: origin.clone(), direction: direction.clone() }]);
   }, []);
 
   const removeBullet = useCallback((id) => {
@@ -1275,6 +1118,11 @@ export default function MatrixGame({ resumeData }) {
 
   const removePlayerBullet = useCallback((id) => {
     setPlayerBullets(prev => prev.filter(b => b.id !== id));
+  }, []);
+
+  const handlePlayerBulletHit = useCallback(() => {
+    setHitMarker(true);
+    setTimeout(() => setHitMarker(false), 280);
   }, []);
 
   const damageNeo = useCallback((amount) => {
@@ -1332,16 +1180,18 @@ export default function MatrixGame({ resumeData }) {
     setIsFlying(false);
     setAgentKey(k => k + 1);
     setBullets([]);
+    setTimeout(() => document.querySelector('canvas')?.requestPointerLock(), 80);
   }, []);
 
-  if (phase === 'intro') return <WakeUpSequence onDone={() => setPhase('playing')} />;
+  if (phase === 'intro') return <WakeUpSequence onDone={() => setPhase('tutorial')} />;
+  if (phase === 'tutorial') return <TutorialModal onStart={() => setPhase('playing')} />;
 
   const canvasFilter = btActive
     ? 'saturate(0.5) contrast(1.14) brightness(0.95)'
     : 'none';
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', background: '#010e03' }}>
+    <div className="mx-root">
       <Canvas
         camera={{ position: [0, 2.5, 5], fov: 75, near: 0.08, far: 380 }}
         gl={{ antialias: false, powerPreference: 'high-performance', alpha: false }}
@@ -1411,6 +1261,7 @@ export default function MatrixGame({ resumeData }) {
             agentRegistryRef={agentRegistryRef}
             timeScaleRef={timeScaleRef}
             onExpire={removePlayerBullet}
+            onAgentHit={handlePlayerBulletHit}
           />
         ))}
       </Canvas>
@@ -1436,20 +1287,10 @@ export default function MatrixGame({ resumeData }) {
 
       {nearDoor && !openDoor && sceneId === 'corridor' && (
         <div
+          className="mx-door-prompt"
           style={{
-            position: 'fixed',
-            bottom: 68,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontFamily: '"Share Tech Mono", monospace',
-            fontSize: '0.8rem',
             color: nearDoor.locked ? (hasKey ? '#ffaa00' : '#ff2200') : nearDoor.color,
-            letterSpacing: '0.18em',
             textShadow: `0 0 16px ${nearDoor.locked ? (hasKey ? '#ffaa00' : '#ff2200') : nearDoor.color}`,
-            animation: 'btPulse 0.9s ease-in-out infinite alternate',
-            pointerEvents: 'none',
-            zIndex: 20,
-            textTransform: 'uppercase',
           }}
         >
           {nearDoor.locked
@@ -1461,29 +1302,16 @@ export default function MatrixGame({ resumeData }) {
       )}
 
       {nearTerminal && !openDoor && sceneId !== 'corridor' && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 68,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontFamily: '"Share Tech Mono", monospace',
-            fontSize: '0.8rem',
-            color: '#00ff41',
-            letterSpacing: '0.18em',
-            textShadow: '0 0 16px #00ff41',
-            animation: 'btPulse 0.9s ease-in-out infinite alternate',
-            pointerEvents: 'none',
-            zIndex: 20,
-          }}
-        >
-          [ E ]  ACCESS TERMINAL
-        </div>
+        <div className="mx-terminal-prompt">[ E ]  ACCESS TERMINAL</div>
       )}
 
       {nearAgent && !openDoor && <NearAgentPrompt />}
       {bulletWarn && !openDoor && <BulletWarnOverlay angle={bulletWarn.angle} />}
       {agentAlert && !openDoor && <AgentSpawnAlert />}
+
+      {sceneId === 'corridor' && !openDoor && (
+        <CorridorDoorList charPosRef={charPosRef} hasKey={hasKey} />
+      )}
 
       {btActive && <BulletTimeOverlay timeLeft={btLeft} maxTime={BT_DURATION} />}
       {isFlying && <FlyingHUD />}
@@ -1497,93 +1325,26 @@ export default function MatrixGame({ resumeData }) {
       {!openDoor && <NeoHealthBar hp={neoHp} />}
 
       {!openDoor && !isFlying && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-            zIndex: 8,
-            color: shootCooldown ? 'rgba(0,255,65,0.9)' : 'rgba(0,255,65,0.45)',
-            fontSize: '1.1rem',
-            lineHeight: 1,
-            userSelect: 'none',
-            textShadow: shootCooldown ? '0 0 12px #00ff41' : 'none',
-            transition: 'color 0.15s, text-shadow 0.15s',
-          }}
-        >
-          +
-        </div>
+        <Reticle shooting={shootCooldown} hit={hitMarker} />
       )}
 
       {dead && <DeathScreen onRestart={handleRestart} />}
 
-      {dodgeFlash && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 499,
-            pointerEvents: 'none',
-            background: 'rgba(0,220,255,0.10)',
-            animation: 'mxFlash 0.16s ease-out 3 alternate',
-          }}
-        />
-      )}
+      {dodgeFlash && <div className="mx-overlay mx-dodge-flash" />}
 
       <FadeOverlay active={fading} />
       <BTCooldownBar coolRef={btCoolRef} maxCD={BT_COOLDOWN} />
 
-      {hasKey && !openDoor && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 22,
-            right: 20,
-            zIndex: 15,
-            fontFamily: '"Share Tech Mono", monospace',
-            fontSize: '0.58rem',
-            color: '#ff4422',
-            letterSpacing: '0.14em',
-            textShadow: '0 0 10px #ff2200',
-            pointerEvents: 'none',
-          }}
-        >
-          ● RED PILL
-        </div>
-      )}
+      {hasKey && !openDoor && <div className="mx-key-indicator">● RED PILL</div>}
 
       {!openDoor && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 14,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontFamily: '"Share Tech Mono", monospace',
-            fontSize: '0.60rem',
-            color: 'rgba(80,80,80,0.55)',
-            letterSpacing: '0.1em',
-            pointerEvents: 'none',
-            zIndex: 10,
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-          }}
-        >
+        <div className="mx-controls-hint">
           {isFlying
             ? 'WASD MOVE · SPACE FLY UP · CTRL FLY DOWN · Z/F BULLET-TIME'
-            : 'CLICK SHOOT · WASD MOVE · SHIFT SPRINT · SPACE JUMP · Q DODGE-L · R DODGE-R · CTRL DUCK · J PUNCH · K KICK · Z/F BT · E INTERACT'}
+            : 'CLICK SHOOT · WASD MOVE · SHIFT SPRINT · SPACE JUMP · Q/R DODGE · CTRL DUCK · J PUNCH · K ROUNDHOUSE · L SPIN HOOK · Z/F BT · E INTERACT'}
         </div>
       )}
 
-      <style>{`
-        @keyframes mxFlash  { from{opacity:1} to{opacity:0} }
-        @keyframes mxTextIn { from{opacity:0;transform:translate(-50%,-50%) scale(1.25)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
-        @keyframes btPulse  { from{opacity:0.65} to{opacity:1} }
-        @keyframes kickRing { 0%{width:0;height:0;border-width:8px;opacity:1} 100%{width:340px;height:340px;border-width:2px;opacity:0} }
-        @keyframes kickText { 0%{opacity:1;transform:translate(-50%,-50%) scale(1.4)} 60%{opacity:1;transform:translate(-50%,-50%) scale(1)} 100%{opacity:0;transform:translate(-50%,-50%) scale(0.85)} }
-      `}</style>
     </div>
   );
 }

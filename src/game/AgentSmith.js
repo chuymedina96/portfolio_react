@@ -2,12 +2,15 @@ import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const WALK_SPD    = 7.0;
-const CATCH_D     = 1.9;
-const CATCH_CD    = 3500;
-const SHOOT_RANGE = 38;
-const MAX_HP      = 100;
-const DEATH_DUR   = 1.0;   // seconds to fall + fade
+const WALK_SPD      = 7.0;
+const STRAFE_SPD    = 4.2;
+const PREFERRED_MIN = 18;   // agent backs off if closer than this
+const PREFERRED_MAX = 30;   // agent closes in if farther than this
+const CATCH_D       = 1.9;
+const CATCH_CD      = 3500;
+const SHOOT_RANGE   = 38;
+const MAX_HP        = 100;
+const DEATH_DUR     = 1.0;
 
 const _dir = new THREE.Vector3();
 const _pv  = new THREE.Vector3();
@@ -189,6 +192,7 @@ export default function AgentSmith({
   spawnOffset,
   spawnDelay = 4000,
   shootInterval = 2800,
+  firstShotDelay,
   playerPosRef,
   dodgeRef,
   timeScaleRef,
@@ -204,7 +208,7 @@ export default function AgentSmith({
   const posRef     = useRef(new THREE.Vector3(spawnOffset?.x ?? 0, 0, spawnOffset?.z ?? 25));
   const activeRef  = useRef(false);
   const lastCatch  = useRef(-Infinity);
-  const shootTimer = useRef(shootInterval * 0.5 + Math.random() * 1200);
+  const shootTimer = useRef(firstShotDelay !== undefined ? firstShotDelay : shootInterval * 0.5 + Math.random() * 1200);
   const movingRef  = useRef(false);
 
   const hpRef        = useRef(MAX_HP);
@@ -287,12 +291,24 @@ export default function AgentSmith({
       pos.addScaledVector(kb.vel, dt);
       if (kb.t <= 0) kb.vel.set(0, 0, 0);
     } else {
-      // Move toward player
-      const spd   = dist2D < 12 ? WALK_SPD * 1.35 : WALK_SPD;
-      const moveZ = Math.sign(dz) * Math.min(Math.abs(dz) * 0.55, spd * dt);
-      const moveX = Math.sign(dx) * Math.min(Math.abs(dx) * 0.45, spd * 0.7 * dt);
-      pos.z += moveZ;
-      pos.x += moveX;
+      if (dist2D < PREFERRED_MIN) {
+        // Too close — back away to maintain shooting distance
+        const spd = WALK_SPD * 0.9;
+        pos.x -= Math.sign(dx) * Math.min(Math.abs(dx) * 0.45, spd * dt);
+        pos.z -= Math.sign(dz) * Math.min(Math.abs(dz) * 0.45, spd * dt);
+      } else if (dist2D > PREFERRED_MAX) {
+        // Too far — close in
+        const spd = WALK_SPD * 1.2;
+        pos.x += Math.sign(dx) * Math.min(Math.abs(dx) * 0.45, spd * 0.75 * dt);
+        pos.z += Math.sign(dz) * Math.min(Math.abs(dz) * 0.55, spd * dt);
+      } else {
+        // At preferred range — strafe perpendicular to player direction
+        const sd = clock.elapsedTime % 3.6 > 1.8 ? 1 : -1;
+        const perpX = -dz / dist2D;
+        const perpZ =  dx / dist2D;
+        pos.x += perpX * STRAFE_SPD * dt * sd;
+        pos.z += perpZ * STRAFE_SPD * dt * sd;
+      }
     }
 
     if (bounds) {
