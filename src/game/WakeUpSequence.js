@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MatrixRain from './MatrixRain';
+import { isMobileDevice } from './useMobile';
 
 const MESSAGES = [
   { text: 'Wake up, Neo\u2026',                     color: '#00ff41', pause: 1500 },
@@ -20,14 +21,16 @@ export default function WakeUpSequence({ onDone }) {
   const [charIdx, setCharIdx] = useState(0);
   const [finished, setFinished] = useState(false);
 
-  // Skip on any keydown / click
+  // Skip on any keydown / tap / click
   useEffect(() => {
     const skip = () => { if (!finished) { setFinished(true); onDone(); } };
-    window.addEventListener('keydown', skip);
-    window.addEventListener('click',   skip);
+    window.addEventListener('keydown',   skip);
+    window.addEventListener('click',     skip);
+    window.addEventListener('touchstart', skip);
     return () => {
-      window.removeEventListener('keydown', skip);
-      window.removeEventListener('click',   skip);
+      window.removeEventListener('keydown',   skip);
+      window.removeEventListener('click',     skip);
+      window.removeEventListener('touchstart', skip);
     };
   }, [finished, onDone]);
 
@@ -107,7 +110,7 @@ export default function WakeUpSequence({ onDone }) {
         color: 'rgba(0,255,65,0.38)', letterSpacing: '0.12em',
         textTransform: 'uppercase',
       }}>
-        PRESS ANY KEY TO SKIP
+        {isMobileDevice() ? 'TAP TO SKIP' : 'PRESS ANY KEY TO SKIP'}
       </div>
 
       <style>{`

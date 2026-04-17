@@ -4,8 +4,8 @@ import * as THREE from 'three';
 
 const WALK_SPD      = 7.0;
 const STRAFE_SPD    = 4.2;
-const PREFERRED_MIN = 18;   // agent backs off if closer than this
-const PREFERRED_MAX = 30;   // agent closes in if farther than this
+const PREFERRED_MIN = 7;    // agent backs off if closer than this
+const PREFERRED_MAX = 14;   // agent closes in if farther than this
 const CATCH_D       = 1.9;
 const CATCH_CD      = 3500;
 const SHOOT_RANGE   = 38;

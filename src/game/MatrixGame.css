@@ -11,8 +11,54 @@
 .mx-root {
   width: 100vw;
   height: 100vh;
+  height: 100dvh; /* iOS Safari safe viewport */
   position: relative;
   background: #010e03;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.mx-root canvas {
+  touch-action: none;
+  display: block;
+}
+
+/* ── Portrait warning (mobile only) ──────────────────────────────────────── */
+.mx-portrait-warn {
+  display: none;
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .mx-portrait-warn {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #00ff41;
+    text-align: center;
+    padding: 24px;
+  }
+  .mx-portrait-warn__icon {
+    font-size: 3rem;
+    animation: mxPortraitSpin 1.5s ease-in-out infinite alternate;
+  }
+  .mx-portrait-warn__text {
+    font-size: 1rem;
+    color: rgba(0,255,65,0.85);
+    letter-spacing: 0.08em;
+    line-height: 1.7;
+  }
+}
+
+@keyframes mxPortraitSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-90deg); }
 }
 
 /* ── Shared overlay base ───────────────────────────────────────────────────── */
@@ -415,36 +461,36 @@
 /* top / bottom lines: thin horizontal bars */
 .mx-reticle__line--t,
 .mx-reticle__line--b {
-  width: 8px; height: 2px;
-  left: -4px;
+  width: 14px; height: 2px;
+  left: -7px;
 }
-.mx-reticle__line--t { bottom: 7px; }
-.mx-reticle__line--b { top: 7px; }
+.mx-reticle__line--t { bottom: 9px; }
+.mx-reticle__line--b { top: 9px; }
 
 /* left / right lines: thin vertical bars */
 .mx-reticle__line--l,
 .mx-reticle__line--r {
-  width: 2px; height: 8px;
-  top: -4px;
+  width: 2px; height: 14px;
+  top: -7px;
 }
-.mx-reticle__line--l { right: 7px; }
-.mx-reticle__line--r { left: 7px; }
+.mx-reticle__line--l { right: 9px; }
+.mx-reticle__line--r { left: 9px; }
 
 /* center dot */
 .mx-reticle__dot {
   position: absolute;
-  width: 3px; height: 3px;
-  background: rgba(0, 255, 65, 0.9);
+  width: 4px; height: 4px;
+  background: rgba(0, 255, 65, 1.0);
   border-radius: 50%;
-  top: -1.5px; left: -1.5px;
-  box-shadow: 0 0 5px rgba(0, 255, 65, 0.9);
+  top: -2px; left: -2px;
+  box-shadow: 0 0 8px rgba(0, 255, 65, 1.0);
 }
 
 /* spread on shoot */
-.mx-reticle--shooting .mx-reticle__line--t { bottom: 12px; opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
-.mx-reticle--shooting .mx-reticle__line--b { top: 12px;    opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
-.mx-reticle--shooting .mx-reticle__line--l { right: 12px;  opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
-.mx-reticle--shooting .mx-reticle__line--r { left: 12px;   opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
+.mx-reticle--shooting .mx-reticle__line--t { bottom: 16px; opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
+.mx-reticle--shooting .mx-reticle__line--b { top: 16px;    opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
+.mx-reticle--shooting .mx-reticle__line--l { right: 16px;  opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
+.mx-reticle--shooting .mx-reticle__line--r { left: 16px;   opacity: 0.9; background: rgba(0, 255, 65, 0.9); }
 
 /* hit marker */
 .mx-reticle__hit {

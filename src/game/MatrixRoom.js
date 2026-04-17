@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { ROOM } from './constants';
 
 const { halfW: HW, height: H, depth: D, terminalZ: TZ, exitZ: EZ } = ROOM;
-const EXIT_TRIGGER = 1.8;
+const EXIT_TRIGGER = -0.6; // negative = fires 0.6 units before portal face
 const TERM_TRIGGER = 5.0;
 const G = '#00ff41';
 

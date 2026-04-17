@@ -399,6 +399,9 @@ export default function PlayerCharacter({
   onNearDoor,
   sceneId,
   cameraForwardRef,
+  mobileJoystickRef,
+  mobileJumpRef,
+  mobileSprintRef,
 }) {
   const { gl } = useThree();
   const keys    = useControls();
@@ -451,15 +454,21 @@ export default function PlayerCharacter({
   }, [paused, stateRef, flyingRef]);
 
   useFrame((state, delta) => {
-    const dt  = Math.min(delta, 0.05);
-    const k   = keys.current;
-    const yaw = yawRef.current;
-    const pos = charPosRef.current;
-    const j   = jumpRef.current;
+    const dt    = Math.min(delta, 0.05);
+    const k     = keys.current;
+    const yaw   = yawRef.current;
+    const pitch = pitchRef.current;
+    const pos   = charPosRef.current;
+    const j     = jumpRef.current;
 
-    const isSprinting = k.ShiftLeft || k.ShiftRight;
-    const isMoving    = !paused && (k.KeyW || k.KeyS || k.KeyA || k.KeyD ||
-                                    k.ArrowUp || k.ArrowDown || k.ArrowLeft || k.ArrowRight);
+    const mj = mobileJoystickRef?.current;
+    const mjMag = mj ? Math.sqrt(mj.x * mj.x + mj.y * mj.y) : 0;
+    const isSprinting = k.ShiftLeft || k.ShiftRight || (mobileSprintRef?.current ?? false);
+    const isMoving    = !paused && (
+      k.KeyW || k.KeyS || k.KeyA || k.KeyD ||
+      k.ArrowUp || k.ArrowDown || k.ArrowLeft || k.ArrowRight ||
+      mjMag > 0.06
+    );
 
     // ── XZ movement ────────────────────────────────────────────────────────────
     if (!paused) {
@@ -471,6 +480,15 @@ export default function PlayerCharacter({
       if (k.KeyS || k.ArrowDown)  pos.addScaledVector(_fwd,   -spd * 0.55 * dt);
       if (k.KeyA || k.ArrowLeft)  pos.addScaledVector(_right, -spd * 0.75 * dt);
       if (k.KeyD || k.ArrowRight) pos.addScaledVector(_right,  spd * 0.75 * dt);
+
+      // Mobile joystick input — joystick.y is screen-down = backward, so negate for forward
+      if (mobileJoystickRef?.current) {
+        const mj = mobileJoystickRef.current;
+        if (Math.abs(mj.x) > 0.06 || Math.abs(mj.y) > 0.06) {
+          pos.addScaledVector(_fwd,   -mj.y * spd * dt);
+          pos.addScaledVector(_right,  mj.x * spd * dt);
+        }
+      }
     }
 
     // ── Dodge impulse — exponential deceleration for smooth Matrix-style glide ──
@@ -498,17 +516,33 @@ export default function PlayerCharacter({
       j.vx = 0;
     }
 
+    // ── Mobile jump trigger ────────────────────────────────────────────────────
+    if (mobileJumpRef?.current && !flyingRef?.current) {
+      mobileJumpRef.current = false;
+      if (j.grounded) {
+        j.vy = JUMP_VEL;
+        j.grounded = false;
+        stateRef.current.jumping  = true;
+        stateRef.current.grounded = false;
+      } else if (j.wallContact !== 0 && j.wallCd <= 0) {
+        j.vy = WALL_JUMP_VY;
+        j.vx = -j.wallContact * WALL_JUMP_VX;
+        j.wallCd = WALL_CD;
+        stateRef.current.jumping = true;
+      }
+    }
+
     // ── Flying mode (ROOT ACCESS) ───────────────────────────────────────────────
     const isFlying = flyingRef?.current ?? false;
     stateRef.current.flying = isFlying;
 
     if (isFlying) {
-      const flySpd = 14;
+      const flySpd = 20;
       if (!paused) {
         if (k.Space)                             pos.y += flySpd * dt;
         if (k.ControlLeft || k.ControlRight)     pos.y -= flySpd * dt;
       }
-      pos.y = THREE.MathUtils.clamp(pos.y, -10, 80);
+      pos.y = THREE.MathUtils.clamp(pos.y, -10, 130);
       j.vy      = 0;
       j.grounded = false;
     } else {
@@ -587,13 +621,22 @@ export default function PlayerCharacter({
     // ── TPS Camera ─────────────────────────────────────────────────────────────
     _camOff.set(0, 0, CAM_DIST);
     _camOff.applyAxisAngle(_Y, yaw);
-    const pitchAdj = pitchRef.current * 1.6;
+    const pitchAdj = pitch * 1.6;
     state.camera.position.set(
-      pos.x + _camOff.x,
+      THREE.MathUtils.clamp(pos.x + _camOff.x, bounds.xMin + 0.3, bounds.xMax - 0.3),
       pos.y + CAM_H + pitchAdj * 0.4,
       pos.z + _camOff.z
     );
-    _lookAt.set(pos.x, pos.y + CAM_LOOK + pitchAdj, pos.z);
+    // Look in the aim direction (not at Neo's body) so screen-center matches where bullets go
+    // Note: positive pitch = mouse up = looking up, so forward-y uses +sin(pitch)
+    const aimX = -Math.sin(yaw) * Math.cos(pitch);
+    const aimY =  Math.sin(pitch);
+    const aimZ = -Math.cos(yaw) * Math.cos(pitch);
+    _lookAt.set(
+      state.camera.position.x + aimX * 20,
+      state.camera.position.y + aimY * 20,
+      state.camera.position.z + aimZ * 20,
+    );
     state.camera.lookAt(_lookAt);
     if (cameraForwardRef?.current) state.camera.getWorldDirection(cameraForwardRef.current);
 
