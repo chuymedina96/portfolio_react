@@ -24,7 +24,15 @@ export default function MatrixRain({ opacity = 0.12 }) {
     init();
     window.addEventListener('resize', init);
 
-    const draw = () => {
+    // Throttle to ~20 fps — rain is slow-moving, imperceptible above ~18 fps
+    const INTERVAL = 1000 / 20;
+    let last = 0;
+
+    const draw = (ts) => {
+      id = requestAnimationFrame(draw);
+      if (ts - last < INTERVAL) return;
+      last = ts;
+
       ctx.fillStyle = 'rgba(0,0,0,0.055)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.font = `${FS}px monospace`;
@@ -33,11 +41,9 @@ export default function MatrixRain({ opacity = 0.12 }) {
         const y = drops[i] * FS;
         if (y < 0) { drops[i] += 0.35; continue; }
 
-        // Bright head
         ctx.fillStyle = '#ccffcc';
         ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], i * FS, y);
 
-        // Green body one step behind
         if (y - FS >= 0) {
           ctx.fillStyle = '#00ff41';
           ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], i * FS, y - FS);
@@ -48,9 +54,8 @@ export default function MatrixRain({ opacity = 0.12 }) {
           drops[i] = -(Math.random() * 18);
         }
       }
-      id = requestAnimationFrame(draw);
     };
-    draw();
+    id = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(id);

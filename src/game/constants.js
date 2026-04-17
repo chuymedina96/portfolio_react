@@ -73,7 +73,7 @@ export const RACE_DOCK_DISTANCE = 30;
 export const MATRIX_DOORS = [
   {
     id:       'about',
-    position: new THREE.Vector3(-5.0, 2.9, -42),
+    position: new THREE.Vector3(-5.0, 2.9, -35),
     label:    '> KNOW THYSELF',
     sublabel: 'About Me',
     color:    '#00ff41',
@@ -91,7 +91,7 @@ export const MATRIX_DOORS = [
   },
   {
     id:       'resume',
-    position: new THREE.Vector3(-5.0, 2.9, -84),
+    position: new THREE.Vector3(-5.0, 2.9, -88),
     label:    '> FOLLOW THE CODE',
     sublabel: 'Resume & Skills',
     color:    '#33ff88',
@@ -99,18 +99,8 @@ export const MATRIX_DOORS = [
     locked:   false,
   },
   {
-    id:           'locked-2',
-    position:     new THREE.Vector3(5.0, 2.9, -106),
-    label:        '> ROOT ACCESS',
-    sublabel:     'ACCESS DENIED',
-    color:        '#ff2200',
-    side:         'right',
-    locked:       true,
-    isRootAccess: true,
-  },
-  {
     id:       'portfolio',
-    position: new THREE.Vector3(-5.0, 2.9, -128),
+    position: new THREE.Vector3(-5.0, 2.9, -114),
     label:    '> DOWN THE RABBIT HOLE',
     sublabel: 'Projects',
     color:    '#00ffcc',
@@ -119,7 +109,7 @@ export const MATRIX_DOORS = [
   },
   {
     id:       'locked-3',
-    position: new THREE.Vector3(5.0, 2.9, -152),
+    position: new THREE.Vector3(5.0, 2.9, -140),
     label:    '> ZION MAINFRAME',
     sublabel: 'CLASSIFIED',
     color:    '#ff2200',
@@ -128,19 +118,29 @@ export const MATRIX_DOORS = [
   },
   {
     id:       'contact',
-    position: new THREE.Vector3(-5.0, 2.9, -174),
+    position: new THREE.Vector3(-5.0, 2.9, -166),
     label:    '> THE ORACLE AWAITS',
     sublabel: 'Contact',
     color:    '#88ff44',
     side:     'left',
     locked:   false,
   },
+  {
+    id:           'locked-2',
+    position:     new THREE.Vector3(5.0, 2.9, -192),
+    label:        '> ROOT ACCESS',
+    sublabel:     'ACCESS DENIED',
+    color:        '#ff2200',
+    side:         'right',
+    locked:       true,
+    isRootAccess: true,
+  },
 ];
 
 export const MATRIX_DOOR_DIST = 18;
 
-// Red pill collectible — between ROOT ACCESS door and portfolio door
-export const KEY_POSITION = new THREE.Vector3(0, 0.35, -117);
+// Red pill collectible — between contact and root access doors
+export const KEY_POSITION = new THREE.Vector3(0, 0.35, -178);
 
 // Room config — bigger for immersive open environments
 export const ROOM = {

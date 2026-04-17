@@ -68,6 +68,10 @@ function NeoBody({ stateRef }) {
         s.flying ? -0.9 : (s.kicking && s.flyKick) ? -0.45 : 0,
         0.12
       );
+      if (s.shooting) {
+        const sAmp = -Math.PI * 0.7 * Math.sin((s.shootT || 0) * Math.PI);
+        rArm.current.rotation.x = THREE.MathUtils.lerp(rArm.current.rotation.x, sAmp, 0.4);
+      }
     }
 
     // Roundhouse kick — big sweep up to near-horizontal, hold, snap back
@@ -90,14 +94,17 @@ function NeoBody({ stateRef }) {
 
     // Body lean: dodge = sideways, crouch = lean back (Matrix bullet-dodge)
     if (tilt.current) {
-      const tz = s.dodging   ? s.dodgeDir * 0.72 : 0;  // deeper dodge lean
-      const tx = s.flying    ? 0.28              // slight forward lean when flying
-               : s.crouching ? 0.65              // lean back under bullets
-               : s.kicking   ? -0.28             // lean back into kick chamber
+      const tz = s.dodging   ? s.dodgeDir * 0.72 : 0;
+      const tx = s.flying    ? 0.28
+               : s.crouching ? 0.65
+               : s.kicking   ? -0.28
                : !s.grounded ? -0.14
                : 0;
-      tilt.current.rotation.z = THREE.MathUtils.lerp(tilt.current.rotation.z, tz,  0.18);
-      tilt.current.rotation.x = THREE.MathUtils.lerp(tilt.current.rotation.x, tx,  0.16);
+      // Snap into dodge lean fast; ease out gently when dodge ends
+      const lerpZ = s.dodging ? 0.32 : 0.14;
+      const lerpX = s.crouching ? 0.22 : 0.14;
+      tilt.current.rotation.z = THREE.MathUtils.lerp(tilt.current.rotation.z, tz, lerpZ);
+      tilt.current.rotation.x = THREE.MathUtils.lerp(tilt.current.rotation.x, tx, lerpX);
     }
 
     // Crouch: lower body
@@ -245,6 +252,15 @@ function NeoBody({ stateRef }) {
             <boxGeometry args={[0.21, 0.19, 0.21]} />
             <meshStandardMaterial color="#b09880" roughness={0.7} />
           </mesh>
+          {/* Gun — simple blocky pistol */}
+          <mesh position={[0, -1.02, -0.14]} rotation={[-0.1, 0, 0]}>
+            <boxGeometry args={[0.10, 0.18, 0.32]} />
+            <meshStandardMaterial color="#111111" roughness={0.4} metalness={0.7} />
+          </mesh>
+          <mesh position={[0, -0.96, -0.28]} rotation={[-0.1, 0, 0]}>
+            <boxGeometry args={[0.055, 0.055, 0.22]} />
+            <meshStandardMaterial color="#0a0a0a" roughness={0.3} metalness={0.8} />
+          </mesh>
         </group>
 
         {/* ── Legs ───────────────────────────────────────────────────────── */}
@@ -302,6 +318,7 @@ export default function PlayerCharacter({
   paused,
   onNearDoor,
   sceneId,
+  cameraForwardRef,
 }) {
   const { gl } = useThree();
   const keys    = useControls();
@@ -376,11 +393,17 @@ export default function PlayerCharacter({
       if (k.KeyD || k.ArrowRight) pos.addScaledVector(_right,  spd * 0.75 * dt);
     }
 
-    // ── Dodge impulse ──────────────────────────────────────────────────────────
+    // ── Dodge impulse — exponential deceleration for smooth Matrix-style glide ──
     if (dodgeRef.current.active) {
+      // Decay velocity: half-life ≈ 0.18s  (1 - 3.8*dt per frame)
+      const decay = Math.max(0, 1 - dt * 3.8);
+      dodgeRef.current.vel.multiplyScalar(decay);
       dodgeRef.current.t -= dt;
-      if (dodgeRef.current.t <= 0) {
+
+      const speed = dodgeRef.current.vel.length();
+      if (dodgeRef.current.t <= 0 || speed < 0.8) {
         dodgeRef.current.active = false;
+        dodgeRef.current.vel.set(0, 0, 0);
         stateRef.current.dodging = false;
       } else {
         pos.addScaledVector(dodgeRef.current.vel, dt);
@@ -462,6 +485,10 @@ export default function PlayerCharacter({
         stateRef.current.kickT   = 0;
       }
     }
+    // Shoot animation tick
+    if (stateRef.current.shooting) {
+      stateRef.current.shootT = Math.min(1, (stateRef.current.shootT || 0) + dt / 0.28);
+    }
 
     // ── Character mesh ─────────────────────────────────────────────────────────
     if (groupRef.current) {
@@ -480,6 +507,7 @@ export default function PlayerCharacter({
     );
     _lookAt.set(pos.x, pos.y + CAM_LOOK + pitchAdj, pos.z);
     state.camera.lookAt(_lookAt);
+    if (cameraForwardRef?.current) state.camera.getWorldDirection(cameraForwardRef.current);
 
     // ── Door proximity ──────────────────────────────────────────────────────────
     if (sceneId === 'corridor' && onNearDoor) {

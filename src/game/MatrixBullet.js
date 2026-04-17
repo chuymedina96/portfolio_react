@@ -71,24 +71,17 @@ export default function MatrixBullet({ id, origin, direction, playerPosRef, crou
 
   return (
     <group ref={groupRef}>
-      {/* Core */}
+      {/* Core — bright emissive sphere, no pointLight (expensive per-bullet) */}
       <mesh>
-        <sphereGeometry args={[0.07, 6, 6]} />
-        <meshStandardMaterial color="#ffffcc" emissive="#ffff00" emissiveIntensity={14} />
+        <sphereGeometry args={[0.09, 5, 4]} />
+        <meshStandardMaterial color="#ffffaa" emissive="#ffee00" emissiveIntensity={18} />
       </mesh>
-      {/* Inner trail cylinder along +Z */}
-      <mesh position={[0, 0, -0.55]}>
-        <cylinderGeometry args={[0.02, 0.06, 1.1, 5]} rotation={[Math.PI / 2, 0, 0]} />
-        <meshStandardMaterial color="#ff9900" emissive="#ff5500" emissiveIntensity={7}
-          transparent opacity={0.55} depthWrite={false} />
+      {/* Single trail cone along -Z */}
+      <mesh position={[0, 0, -0.7]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.01, 0.07, 1.4, 4]} />
+        <meshStandardMaterial color="#ff7700" emissive="#ff4400" emissiveIntensity={6}
+          transparent opacity={0.5} depthWrite={false} />
       </mesh>
-      {/* Outer glow trail */}
-      <mesh position={[0, 0, -0.9]}>
-        <cylinderGeometry args={[0.01, 0.08, 1.8, 4]} rotation={[Math.PI / 2, 0, 0]} />
-        <meshStandardMaterial color="#ff6600" emissive="#ff2200" emissiveIntensity={4}
-          transparent opacity={0.28} depthWrite={false} />
-      </mesh>
-      <pointLight color="#ffdd00" intensity={5} distance={5} />
     </group>
   );
 }

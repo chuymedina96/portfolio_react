@@ -148,7 +148,7 @@ function AgentHealthBar({ hpRef, deadRef }) {
     const ratio = Math.max(0, hpRef.current / MAX_HP);
     // Scale X, anchor left: position.x shifts so left edge stays fixed
     fillRef.current.scale.x = Math.max(0.001, ratio);
-    fillRef.current.position.x = -(1 - ratio) * 0.55;
+    fillRef.current.position.x = -(1 - ratio) * 0.66;
     // Colour: green → yellow → red
     const m = fillRef.current.material;
     if (m) {
@@ -158,21 +158,27 @@ function AgentHealthBar({ hpRef, deadRef }) {
   });
 
   return (
-    <group ref={groupRef} position={[0, 3.25, 0]}>
+    <group ref={groupRef} position={[0, 3.6, 0]}>
       {/* Track / background */}
       <mesh>
-        <boxGeometry args={[1.15, 0.115, 0.04]} />
+        <boxGeometry args={[1.4, 0.16, 0.05]} />
         <meshStandardMaterial color="#0a0a0a" transparent opacity={0.82} />
       </mesh>
       {/* HP fill — starts full width; scale.x shrinks it */}
       <mesh ref={fillRef} position={[0, 0, 0.03]}>
-        <boxGeometry args={[1.10, 0.085, 0.04]} />
+        <boxGeometry args={[1.32, 0.12, 0.05]} />
         <meshStandardMaterial color="#00ff41" emissive="#00ff41" emissiveIntensity={0.8} />
       </mesh>
-      {/* Label */}
-      <mesh position={[0, 0.11, 0]}>
-        <boxGeometry args={[0.34, 0.065, 0.01]} />
-        <meshStandardMaterial color="#ffffff" transparent opacity={0.0} />
+      {/* Border */}
+      <mesh position={[0, 0, 0.02]}>
+        <boxGeometry args={[1.44, 0.20, 0.03]} />
+        <meshStandardMaterial color="#00ff41" emissive="#00ff41" emissiveIntensity={0.4}
+          transparent opacity={0.35} wireframe />
+      </mesh>
+      {/* AGENT label indicator strip */}
+      <mesh position={[0, 0.16, 0]}>
+        <boxGeometry args={[0.6, 0.04, 0.01]} />
+        <meshStandardMaterial color="#ff2200" emissive="#ff2200" emissiveIntensity={2} />
       </mesh>
     </group>
   );
@@ -203,6 +209,7 @@ export default function AgentSmith({
 
   const hpRef        = useRef(MAX_HP);
   const hitFlashRef  = useRef(0);
+  const stunRef      = useRef(0);
   const deadRef      = useRef(false);
   const deathTRef    = useRef(0);
   const doneRef      = useRef(false);
@@ -217,6 +224,7 @@ export default function AgentSmith({
         if (deadRef.current) return;
         hpRef.current -= amount;
         hitFlashRef.current = 0.25;
+        stunRef.current = 0.30;
         if (hpRef.current <= 0) deadRef.current = true;
       },
       knockback(dir, force) {
@@ -257,6 +265,12 @@ export default function AgentSmith({
 
     const ts  = timeScaleRef?.current ?? 1;
     const dt  = Math.min(delta, 0.05) * ts;
+
+    if (stunRef.current > 0) {
+      stunRef.current -= dt;
+      return;
+    }
+
     const p   = playerPosRef.current;
     const pos = posRef.current;
 
@@ -298,12 +312,12 @@ export default function AgentSmith({
       onCatch?.();
     }
 
-    // Shoot
+    // Shoot — timer uses dt (time-scaled) so bullet time slows the agent's shots too
     if (dist2D < SHOOT_RANGE) {
-      shootTimer.current -= delta * 1000;
+      shootTimer.current -= dt * 1000;
       if (shootTimer.current <= 0) {
-        shootTimer.current = shootInterval * (0.8 + Math.random() * 0.6);
-        _pv.set(p.x, (p.y ?? 0) + 1.1, p.z);   // aim at player body center
+        shootTimer.current = shootInterval * (0.9 + Math.random() * 0.4);
+        _pv.set(p.x, (p.y ?? 0) + 1.1, p.z);
         _dir.copy(_pv).sub(pos.clone().setY(2.2)).normalize();
         onShoot?.(pos.clone().setY(2.2), _dir);
       }
