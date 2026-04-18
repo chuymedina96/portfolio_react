@@ -2,12 +2,15 @@ import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const WALK_SPD      = 7.0;
-const STRAFE_SPD    = 4.2;
-const PREFERRED_MIN = 7;    // agent backs off if closer than this
-const PREFERRED_MAX = 14;   // agent closes in if farther than this
+const WALK_SPD      = 7.8;
+const STRAFE_SPD    = 3.6;
+const PREFERRED_MIN = 2.2;  // melee range — agent steps in to punch, not back away
+const PREFERRED_MAX = 9;    // closes in if farther than this
+const MELEE_RANGE   = 2.6;  // distance to land a punch on Neo
+const MELEE_CD      = 1.5;  // seconds between melee attacks
+const MELEE_DMG     = 18;
 const CATCH_D       = 1.9;
-const CATCH_CD      = 3500;
+const CATCH_CD      = 4500;
 const SHOOT_RANGE   = 38;
 const MAX_HP        = 100;
 const DEATH_DUR     = 1.0;
@@ -199,17 +202,19 @@ export default function AgentSmith({
   onCatch,
   onShoot,
   onRegister,
-  onSpawn,        // called once when agent becomes active
-  onDead,         // called once when death animation finishes
+  onSpawn,
+  onDead,
+  onMeleePunch,   // called when agent lands a melee hit on Neo
   paused,
   bounds,
 }) {
-  const groupRef   = useRef();
-  const posRef     = useRef(new THREE.Vector3(spawnOffset?.x ?? 0, 0, spawnOffset?.z ?? 25));
-  const activeRef  = useRef(false);
-  const lastCatch  = useRef(-Infinity);
-  const shootTimer = useRef(firstShotDelay !== undefined ? firstShotDelay : shootInterval * 0.5 + Math.random() * 1200);
-  const movingRef  = useRef(false);
+  const groupRef     = useRef();
+  const posRef       = useRef(new THREE.Vector3(spawnOffset?.x ?? 0, 0, spawnOffset?.z ?? 25));
+  const activeRef    = useRef(false);
+  const lastCatch    = useRef(-Infinity);
+  const shootTimer   = useRef(firstShotDelay !== undefined ? firstShotDelay : shootInterval * 0.5 + Math.random() * 1200);
+  const meleeTimer   = useRef(MELEE_CD * 0.5);
+  const movingRef    = useRef(false);
 
   const hpRef        = useRef(MAX_HP);
   const hitFlashRef  = useRef(0);
@@ -282,7 +287,7 @@ export default function AgentSmith({
     const dz     = p.z - pos.z;
     const dist2D = Math.sqrt(dx * dx + dz * dz);
 
-    movingRef.current = dist2D > 2;
+    movingRef.current = dist2D > 1.5;
 
     // Knockback impulse
     const kb = knockbackRef.current;
@@ -291,19 +296,15 @@ export default function AgentSmith({
       pos.addScaledVector(kb.vel, dt);
       if (kb.t <= 0) kb.vel.set(0, 0, 0);
     } else {
-      if (dist2D < PREFERRED_MIN) {
-        // Too close — back away to maintain shooting distance
-        const spd = WALK_SPD * 0.9;
-        pos.x -= Math.sign(dx) * Math.min(Math.abs(dx) * 0.45, spd * dt);
-        pos.z -= Math.sign(dz) * Math.min(Math.abs(dz) * 0.45, spd * dt);
-      } else if (dist2D > PREFERRED_MAX) {
-        // Too far — close in
-        const spd = WALK_SPD * 1.2;
-        pos.x += Math.sign(dx) * Math.min(Math.abs(dx) * 0.45, spd * 0.75 * dt);
-        pos.z += Math.sign(dz) * Math.min(Math.abs(dz) * 0.55, spd * dt);
+      if (dist2D > PREFERRED_MIN) {
+        // Always close in — agent charges toward Neo
+        const urgency = dist2D > PREFERRED_MAX ? 1.3 : 0.85;
+        const spd = WALK_SPD * urgency;
+        pos.x += (dx / dist2D) * spd * dt;
+        pos.z += (dz / dist2D) * spd * dt;
       } else {
-        // At preferred range — strafe perpendicular to player direction
-        const sd = clock.elapsedTime % 3.6 > 1.8 ? 1 : -1;
+        // In melee range — orbit/circle while looking for opening
+        const sd = clock.elapsedTime % 2.8 > 1.4 ? 1 : -1;
         const perpX = -dz / dist2D;
         const perpZ =  dx / dist2D;
         pos.x += perpX * STRAFE_SPD * dt * sd;
@@ -319,7 +320,14 @@ export default function AgentSmith({
     g.position.copy(pos);
     g.rotation.y = Math.atan2(dx, dz);
 
-    // Catch check
+    // Melee punch — lands when close enough and cooldown elapsed
+    meleeTimer.current -= dt;
+    if (dist2D < MELEE_RANGE && meleeTimer.current <= 0) {
+      meleeTimer.current = MELEE_CD * (0.85 + Math.random() * 0.3);
+      onMeleePunch?.(MELEE_DMG);
+    }
+
+    // Catch check (grab) — only after melee is available
     const now    = clock.elapsedTime * 1000;
     const dodging = dodgeRef?.current?.active ?? false;
     if (dist2D < CATCH_D && !dodging && now - lastCatch.current > CATCH_CD) {
@@ -328,8 +336,8 @@ export default function AgentSmith({
       onCatch?.();
     }
 
-    // Shoot — timer uses dt (time-scaled) so bullet time slows the agent's shots too
-    if (dist2D < SHOOT_RANGE) {
+    // Shoot — only fires at mid-long range (agent prefers melee when close)
+    if (dist2D >= PREFERRED_MAX * 0.7 && dist2D < SHOOT_RANGE) {
       shootTimer.current -= dt * 1000;
       if (shootTimer.current <= 0) {
         shootTimer.current = shootInterval * (0.9 + Math.random() * 0.4);

@@ -7,6 +7,38 @@ const JOYSTICK_R     = 56;      // max knob travel in px
 const LEFT_ZONE_FRAC = 0.44;    // left portion of screen = joystick zone
 const SPRINT_THRESH  = 0.80;    // joystick magnitude above this = sprint
 
+// ── Hold button — sets a ref true while finger is held, false on release ────────
+function HoldBtn({ color, w, h, flyRef, children, style = {} }) {
+  return (
+    <button
+      onTouchStart={e => { e.stopPropagation(); e.preventDefault(); if (flyRef) flyRef.current = true; }}
+      onTouchEnd={e => { e.stopPropagation(); if (flyRef) flyRef.current = false; }}
+      onTouchCancel={e => { e.stopPropagation(); if (flyRef) flyRef.current = false; }}
+      style={{
+        width: w, height: h,
+        background: 'rgba(0,0,0,0.75)',
+        border: `2px solid ${color}`,
+        color,
+        borderRadius: 10,
+        fontSize: 12,
+        fontFamily: '"Share Tech Mono", monospace',
+        fontWeight: 'bold',
+        textShadow: `0 0 8px ${color}`,
+        boxShadow: `0 0 10px ${color}44`,
+        cursor: 'pointer',
+        touchAction: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        letterSpacing: '0.04em',
+        WebkitTapHighlightColor: 'transparent',
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 // ── Button ────────────────────────────────────────────────────────────────────
 function Btn({ color, w, h, onPress, children, style = {} }) {
   return (
@@ -44,15 +76,21 @@ export default function MobileControls({
   mobileJoystickRef,
   mobileJumpRef,
   mobileSprintRef,
+  mobileFlyUpRef,
+  mobileFlyDownRef,
   onShoot,
   onPunch,
   onKick,
   onSpinKick,
+  onUppercut,
   onDodgeLeft,
   onDodgeRight,
   onBulletTime,
   onInteract,
+  blockRef,
   canInteract,
+  isFlying,
+  isArchitect,
   paused,
 }) {
   // Touch tracking
@@ -254,26 +292,40 @@ export default function MobileControls({
         pointerEvents: 'all',
       }}>
 
-        {/* Row 1: Dodge + Bullet Time */}
-        <div style={{ display: 'flex', gap: 7 }}>
-          <Btn color="#ffaa00" w={58} h={44} onPress={onDodgeLeft}>◀ DODGE</Btn>
-          <Btn color="#ffaa00" w={58} h={44} onPress={onDodgeRight}>DODGE ▶</Btn>
-          <Btn color="#aa88ff" w={50} h={44} onPress={onBulletTime}>BT</Btn>
-        </div>
-
-        {/* Row 2: Combat */}
-        <div style={{ display: 'flex', gap: 7 }}>
-          <Btn color="#00bbff" w={58} h={54} onPress={onPunch}>PUNCH</Btn>
-          <Btn color="#00bbff" w={58} h={54} onPress={onKick}>KICK</Btn>
-          <Btn color="#00bbff" w={58} h={54} onPress={onSpinKick}>SPIN</Btn>
-        </div>
-
-        {/* Row 3: Jump + Fire */}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <Btn color="#00ff41" w={72} h={68} onPress={() => { mobileJumpRef.current = true; }}>JUMP</Btn>
-          <Btn color="#ff3300" w={84} h={68} onPress={onShoot}
-            style={{ fontSize: 17, letterSpacing: '0.1em' }}>FIRE</Btn>
-        </div>
+        {isFlying ? (
+          /* ── Flying mode: fly up / fly down ─────────────────────────────── */
+          <>
+            <HoldBtn color="#00ffff" w={130} h={64} flyRef={mobileFlyUpRef}
+              style={{ fontSize: 15, letterSpacing: '0.06em' }}>▲ FLY UP</HoldBtn>
+            <HoldBtn color="#00aaff" w={130} h={64} flyRef={mobileFlyDownRef}
+              style={{ fontSize: 15, letterSpacing: '0.06em' }}>▼ FLY DOWN</HoldBtn>
+          </>
+        ) : isArchitect ? (
+          /* ── Architect room: no combat, just look around ─────────────────── */
+          null
+        ) : (
+          /* ── Normal combat buttons ───────────────────────────────────────── */
+          <>
+            <div style={{ display: 'flex', gap: 7 }}>
+              <Btn color="#ffaa00" w={52} h={42} onPress={onDodgeLeft}>◀ DODGE</Btn>
+              <Btn color="#ffaa00" w={52} h={42} onPress={onDodgeRight}>DODGE ▶</Btn>
+              <Btn color="#aa88ff" w={46} h={42} onPress={onBulletTime}>BT</Btn>
+            </div>
+            <div style={{ display: 'flex', gap: 7 }}>
+              <Btn color="#00bbff" w={52} h={48} onPress={onPunch}>PUNCH</Btn>
+              <Btn color="#00bbff" w={52} h={48} onPress={onKick}>KICK</Btn>
+              <Btn color="#00bbff" w={52} h={48} onPress={onSpinKick}>SPIN</Btn>
+              <Btn color="#ffcc44" w={52} h={48} onPress={onUppercut}>UPPER</Btn>
+            </div>
+            <div style={{ display: 'flex', gap: 7 }}>
+              <Btn color="#00ff41" w={62} h={64} onPress={() => { mobileJumpRef.current = true; }}>JUMP</Btn>
+              <HoldBtn color="#00ffcc" w={62} h={64} flyRef={blockRef}
+                style={{ fontSize: 12, letterSpacing: '0.04em' }}>BLOCK</HoldBtn>
+              <Btn color="#ff3300" w={74} h={64} onPress={onShoot}
+                style={{ fontSize: 16, letterSpacing: '0.08em' }}>FIRE</Btn>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

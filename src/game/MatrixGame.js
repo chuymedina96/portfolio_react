@@ -25,7 +25,7 @@ const BT_SCALE    = 0.12;
 const PUNCH_RANGE = 2.6;
 const PUNCH_DMG   = 34;    // 3 punches to kill
 
-const COR_BOUNDS  = { xMin: -4.3, xMax: 4.3, zMin: -295, zMax: 1,  yMin: 0,  yMax: 7.5 };
+const COR_BOUNDS  = { xMin: -4.3, xMax: 4.3, zMin: -235, zMax: 1,  yMin: 0,  yMax: 7.5 };
 const ROOM_BOUNDS = {
   xMin: -ROOM.halfW + 0.4,
   xMax:  ROOM.halfW - 0.4,
@@ -450,7 +450,7 @@ function ArchitectBeacon() {
     if (floorRef.current) floorRef.current.opacity       = 0.18 + p * 0.1;
   });
   return (
-    <group position={[0, 0, -258]}>
+    <group position={[0, 0, -210]}>
       {/* Vertical god-ray column */}
       <mesh position={[0, 20, 0]}>
         <cylinderGeometry args={[0.6, 2.2, 42, 10, 1, true]} />
@@ -474,50 +474,64 @@ function ArchitectBeacon() {
 }
 
 // ── Architect room components ─────────────────────────────────────────────────
+const SCREEN_PALETTE = [
+  { bg: '#001200', emit: '#00ff41' }, // matrix green
+  { bg: '#000814', emit: '#00ccff' }, // cyan/blue feed
+  { bg: '#0c0400', emit: '#ffaa00' }, // amber data
+  { bg: '#080008', emit: '#cc88ff' }, // purple static
+];
+
 function ArchitectScreen({ x, y, z, rotY = 0, w = 3.6, h = 2.2, seed = 0 }) {
   const matRef  = useRef();
   const scanRef = useRef();
+  const pal = SCREEN_PALETTE[Math.abs(seed) % SCREEN_PALETTE.length];
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    if (matRef.current)  matRef.current.emissiveIntensity  = 0.5 + Math.sin(t * 1.3 + seed) * 0.22;
-    if (scanRef.current) scanRef.current.emissiveIntensity = 0.3 + Math.sin(t * 2.1 + seed * 0.7) * 0.15;
+    if (matRef.current)  matRef.current.emissiveIntensity  = 1.0 + Math.sin(t * 1.3 + seed) * 0.35;
+    if (scanRef.current) scanRef.current.emissiveIntensity = 0.6 + Math.sin(t * 2.1 + seed * 0.7) * 0.25;
   });
   return (
     <group position={[x, y, z]} rotation={[0, rotY, 0]}>
+      {/* Monitor bezel — dark plastic */}
       <mesh>
-        <boxGeometry args={[w + 0.2, h + 0.2, 0.1]} />
-        <meshStandardMaterial color="#12100a" metalness={0.7} roughness={0.35} />
+        <boxGeometry args={[w + 0.22, h + 0.22, 0.13]} />
+        <meshStandardMaterial color="#080808" metalness={0.75} roughness={0.3} />
       </mesh>
-      {/* Gold trim lines */}
-      {[[-w/2, 0, [0.05, h+0.2, 0.12]], [w/2, 0, [0.05, h+0.2, 0.12]],
-        [0, h/2, [w+0.2, 0.05, 0.12]], [0, -h/2, [w+0.2, 0.05, 0.12]]].map(([px, py, dims], i) => (
-        <mesh key={i} position={[px, py, 0.01]}>
+      {/* Gold trim */}
+      {[[-w/2, 0, [0.05, h+0.22, 0.15]], [w/2, 0, [0.05, h+0.22, 0.15]],
+        [0, h/2, [w+0.22, 0.05, 0.15]], [0, -h/2, [w+0.22, 0.05, 0.15]]].map(([px, py, dims], i) => (
+        <mesh key={i} position={[px, py, 0.02]}>
           <boxGeometry args={dims} />
-          <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={1.4} metalness={0.9} />
+          <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={1.2} metalness={0.9} />
         </mesh>
       ))}
       {/* Screen */}
-      <mesh position={[0, 0, 0.06]}>
+      <mesh position={[0, 0, 0.07]}>
         <planeGeometry args={[w, h]} />
-        <meshStandardMaterial ref={matRef} color="#000c00" emissive="#00ff41" emissiveIntensity={0.5} roughness={1} />
+        <meshStandardMaterial ref={matRef} color={pal.bg} emissive={pal.emit} emissiveIntensity={1.0} roughness={1} />
       </mesh>
       {/* Horizontal scan line */}
-      <mesh position={[0, 0, 0.065]}>
-        <planeGeometry args={[w * 0.92, 0.06]} />
-        <meshStandardMaterial ref={scanRef} color="#00ff41" emissive="#00ff41"
-          emissiveIntensity={0.3} transparent opacity={0.55} depthWrite={false} />
+      <mesh position={[0, 0, 0.075]}>
+        <planeGeometry args={[w * 0.94, 0.055]} />
+        <meshStandardMaterial ref={scanRef} color={pal.emit} emissive={pal.emit}
+          emissiveIntensity={0.6} transparent opacity={0.65} depthWrite={false} />
       </mesh>
     </group>
   );
 }
 
 function ArchitectTVWall() {
-  // 5 columns × 3 rows of small monitors covering the back wall — movie accurate
+  // 8 columns × 4 rows — movie accurate wall-to-wall monitor bank
   const screens = useMemo(() => {
     const result = [];
-    for (let col = -2; col <= 2; col++) {
-      for (let row = 0; row < 3; row++) {
-        result.push({ x: col * 3.3, y: 1.8 + row * 3.0, z: -57.6, seed: col * 3 + row });
+    for (let col = 0; col < 8; col++) {
+      for (let row = 0; row < 4; row++) {
+        result.push({
+          x:    (col - 3.5) * 2.2,
+          y:    1.2 + row * 2.55,
+          z:    -57.6,
+          seed: col * 7 + row * 13,
+        });
       }
     }
     return result;
@@ -525,93 +539,159 @@ function ArchitectTVWall() {
   return (
     <>
       {screens.map((s, i) => (
-        <ArchitectScreen key={i} x={s.x} y={s.y} z={s.z} w={2.9} h={2.4} seed={s.seed} />
+        <ArchitectScreen key={i} x={s.x} y={s.y} z={s.z} w={1.9} h={2.2} seed={s.seed} />
       ))}
     </>
   );
 }
 
+function ArchitectChair() {
+  return (
+    <group position={[0, 0, -49]}>
+      {/* Seat cushion */}
+      <mesh position={[0, 0.96, 0]}>
+        <boxGeometry args={[1.45, 0.14, 1.45]} />
+        <meshStandardMaterial color="#2c1a08" roughness={0.7} />
+      </mesh>
+      {/* Tall ornate back */}
+      <mesh position={[0, 2.6, -0.65]}>
+        <boxGeometry args={[1.45, 3.3, 0.14]} />
+        <meshStandardMaterial color="#22140a" roughness={0.72} />
+      </mesh>
+      {/* Gold crest at top of back */}
+      <mesh position={[0, 4.3, -0.65]}>
+        <boxGeometry args={[1.56, 0.12, 0.16]} />
+        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={1.8} metalness={0.9} />
+      </mesh>
+      {/* Armrests */}
+      {[-0.66, 0.66].map((x, i) => (
+        <mesh key={i} position={[x, 1.52, 0]}>
+          <boxGeometry args={[0.12, 0.12, 1.45]} />
+          <meshStandardMaterial color="#2c1a08" roughness={0.65} />
+        </mesh>
+      ))}
+      {/* Legs */}
+      {[[-0.58, -0.58], [-0.58, 0.58], [0.58, -0.58], [0.58, 0.58]].map(([lx, lz], i) => (
+        <mesh key={i} position={[lx, 0.45, lz]}>
+          <cylinderGeometry args={[0.065, 0.065, 0.9, 6]} />
+          <meshStandardMaterial color="#1a0e04" roughness={0.5} metalness={0.6} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function ArchitectFigure() {
-  const auraRef  = useRef();
   const lightRef = useRef();
   useFrame(({ clock }) => {
-    const p = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 0.7);
-    if (auraRef.current)  auraRef.current.opacity   = 0.05 + p * 0.06;
-    if (lightRef.current) lightRef.current.intensity = 10 + p * 6;
+    const p = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 0.55);
+    if (lightRef.current) lightRef.current.intensity = 8 + p * 4;
   });
+
+  const suitColor = '#f0ece0'; // cream-white suit matching movie
+  const skinColor = '#d4a87a';
+
   return (
-    <group position={[0, 0.3, -44]}>
-      {/* Raised dais */}
-      <mesh position={[0, -0.15, 0]}>
-        <cylinderGeometry args={[1.4, 1.6, 0.3, 16]} />
-        <meshStandardMaterial color="#1a1408" emissive="#ffaa44" emissiveIntensity={0.5}
-          metalness={0.7} roughness={0.3} />
+    <group position={[0, 0, -44]}>
+      {/* Raised dais — dark marble */}
+      <mesh position={[0, -0.12, 0]}>
+        <cylinderGeometry args={[1.5, 1.7, 0.24, 20]} />
+        <meshStandardMaterial color="#1a1610" emissive="#ffaa44" emissiveIntensity={0.3}
+          metalness={0.8} roughness={0.25} />
       </mesh>
-      {/* Outer aura */}
-      <mesh>
-        <sphereGeometry args={[3.5, 16, 12]} />
-        <meshStandardMaterial ref={auraRef} color="#ffcc44" emissive="#ffaa00"
-          emissiveIntensity={0.5} transparent opacity={0.05} depthWrite={false} />
+      {/* Dais gold ring */}
+      <mesh position={[0, 0, 0]}>
+        <torusGeometry args={[1.55, 0.04, 6, 32]} />
+        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2.5} metalness={0.9} />
       </mesh>
-      {/* Torso — cream suit */}
-      <mesh position={[0, 1.1, 0]}>
-        <boxGeometry args={[0.78, 1.6, 0.4]} />
-        <meshStandardMaterial color="#ece4cc" emissive="#ffcc88" emissiveIntensity={0.4}
-          roughness={0.55} metalness={0.08} />
-      </mesh>
-      {/* Tie */}
-      <mesh position={[0, 1.05, 0.21]}>
-        <boxGeometry args={[0.1, 1.1, 0.02]} />
-        <meshStandardMaterial color="#c8a830" emissive="#ffaa00" emissiveIntensity={1.2} />
-      </mesh>
-      {/* Lapels */}
-      {[-1, 1].map((s, i) => (
-        <mesh key={i} position={[s * 0.16, 1.25, 0.2]} rotation={[0, 0, s * 0.25]}>
-          <boxGeometry args={[0.2, 0.85, 0.03]} />
-          <meshStandardMaterial color="#d8d0b8" emissive="#ffcc88" emissiveIntensity={0.2} />
-        </mesh>
-      ))}
-      {/* Shoulders / arms */}
-      {[-1, 1].map((s, i) => (
-        <mesh key={i} position={[s * 0.55, 0.95, 0]}>
-          <boxGeometry args={[0.22, 1.1, 0.36]} />
-          <meshStandardMaterial color="#e0d8c0" emissive="#ffcc88" emissiveIntensity={0.3}
-            roughness={0.6} />
-        </mesh>
-      ))}
-      {/* Neck */}
-      <mesh position={[0, 2.0, 0]}>
-        <cylinderGeometry args={[0.11, 0.13, 0.36, 8]} />
-        <meshStandardMaterial color="#c8b890" emissive="#ffcc88" emissiveIntensity={0.25} />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0, 2.28, 0]}>
-        <sphereGeometry args={[0.3, 14, 11]} />
-        <meshStandardMaterial color="#c8b080" emissive="#ffcc88" emissiveIntensity={0.3}
-          roughness={0.75} />
-      </mesh>
-      {/* White hair */}
-      <mesh position={[0, 2.52, -0.05]}>
-        <sphereGeometry args={[0.28, 12, 9]} />
-        <meshStandardMaterial color="#f4f0e4" emissive="#fff8e8" emissiveIntensity={0.65} />
-      </mesh>
-      {/* Legs */}
-      {[-0.2, 0.2].map((lx, i) => (
-        <mesh key={i} position={[lx, -0.1, 0]}>
-          <boxGeometry args={[0.3, 1.0, 0.36]} />
-          <meshStandardMaterial color="#ddd4bc" emissive="#ffcc88" emissiveIntensity={0.18} />
+
+      {/* Legs (suit trousers) */}
+      {[-0.19, 0.19].map((lx, i) => (
+        <mesh key={i} position={[lx, 0.5, 0]}>
+          <boxGeometry args={[0.28, 1.0, 0.34]} />
+          <meshStandardMaterial color={suitColor} roughness={0.55} />
         </mesh>
       ))}
       {/* Shoes */}
-      {[-0.2, 0.2].map((lx, i) => (
-        <mesh key={i} position={[lx, -0.68, 0.08]}>
-          <boxGeometry args={[0.26, 0.18, 0.44]} />
-          <meshStandardMaterial color="#1e1806" emissive="#ffaa44" emissiveIntensity={0.35}
-            metalness={0.6} roughness={0.35} />
+      {[-0.19, 0.19].map((lx, i) => (
+        <mesh key={i} position={[lx, 0.01, 0.1]}>
+          <boxGeometry args={[0.24, 0.16, 0.42]} />
+          <meshStandardMaterial color="#1c1810" metalness={0.6} roughness={0.35} />
         </mesh>
       ))}
-      {/* Animated key light */}
-      <pointLight ref={lightRef} position={[0, 5, 1.5]} color="#ffcc88" intensity={12} distance={18} decay={2} />
+
+      {/* Torso — white suit jacket */}
+      <mesh position={[0, 1.25, 0]}>
+        <boxGeometry args={[0.82, 1.5, 0.42]} />
+        <meshStandardMaterial color={suitColor} roughness={0.5} metalness={0.06} />
+      </mesh>
+      {/* White shirt / vest visible under jacket */}
+      <mesh position={[0, 1.22, 0.21]}>
+        <boxGeometry args={[0.28, 1.1, 0.03]} />
+        <meshStandardMaterial color="#fafaf8" roughness={0.6} />
+      </mesh>
+      {/* Tie — gold */}
+      <mesh position={[0, 1.18, 0.22]}>
+        <boxGeometry args={[0.09, 0.9, 0.025]} />
+        <meshStandardMaterial color="#d4a010" emissive="#ffaa00" emissiveIntensity={0.9} />
+      </mesh>
+      {/* Lapels */}
+      {[-1, 1].map((s, i) => (
+        <mesh key={i} position={[s * 0.18, 1.38, 0.19]} rotation={[0, 0, s * 0.28]}>
+          <boxGeometry args={[0.22, 0.9, 0.03]} />
+          <meshStandardMaterial color="#e8e4d8" roughness={0.5} />
+        </mesh>
+      ))}
+      {/* Shoulders */}
+      {[-1, 1].map((s, i) => (
+        <mesh key={i} position={[s * 0.56, 1.12, 0]}>
+          <boxGeometry args={[0.24, 1.1, 0.38]} />
+          <meshStandardMaterial color={suitColor} roughness={0.52} />
+        </mesh>
+      ))}
+      {/* Forearms — hands clasped in front */}
+      {[-1, 1].map((s, i) => (
+        <mesh key={i} position={[s * 0.38, 0.9, 0.2]} rotation={[0.4, 0, s * 0.12]}>
+          <boxGeometry args={[0.18, 0.7, 0.22]} />
+          <meshStandardMaterial color={suitColor} roughness={0.52} />
+        </mesh>
+      ))}
+      {/* Hands */}
+      <mesh position={[0, 0.7, 0.32]}>
+        <boxGeometry args={[0.32, 0.18, 0.24]} />
+        <meshStandardMaterial color={skinColor} roughness={0.75} />
+      </mesh>
+
+      {/* Neck */}
+      <mesh position={[0, 2.08, 0]}>
+        <cylinderGeometry args={[0.12, 0.14, 0.38, 8]} />
+        <meshStandardMaterial color={skinColor} roughness={0.7} />
+      </mesh>
+      {/* Head */}
+      <mesh position={[0, 2.4, 0]}>
+        <sphereGeometry args={[0.32, 16, 13]} />
+        <meshStandardMaterial color={skinColor} roughness={0.72} />
+      </mesh>
+      {/* White hair on top */}
+      <mesh position={[0, 2.65, -0.04]}>
+        <sphereGeometry args={[0.3, 14, 10]} />
+        <meshStandardMaterial color="#f8f5f0" roughness={0.9} />
+      </mesh>
+      {/* Eyebrow area / brow ridge */}
+      <mesh position={[0, 2.44, 0.28]} rotation={[0.3, 0, 0]}>
+        <boxGeometry args={[0.36, 0.07, 0.08]} />
+        <meshStandardMaterial color="#c09060" roughness={0.8} />
+      </mesh>
+      {/* Eyes */}
+      {[-0.1, 0.1].map((ex, i) => (
+        <mesh key={i} position={[ex, 2.4, 0.29]}>
+          <sphereGeometry args={[0.04, 8, 6]} />
+          <meshStandardMaterial color="#1a1410" roughness={0.5} />
+        </mesh>
+      ))}
+
+      {/* Subtle key light — white, not golden, since room is bright */}
+      <pointLight ref={lightRef} position={[0, 4, 1.5]} color="#fff8ee" intensity={8} distance={14} decay={2} />
     </group>
   );
 }
@@ -647,127 +727,149 @@ function CodeParticles() {
   );
 }
 
-function ArchitectRoom({ charPosRef, onNearReturn }) {
-  const nearRef = useRef(false);
+function ArchitectRoom({ charPosRef, onNearReturn, onExitReached }) {
+  const nearRef   = useRef(false);
+  const exitedRef = useRef(false);
 
-  // Trigger "near return" when player walks back toward entrance (z > -6)
   useFrame(() => {
     if (!charPosRef?.current) return;
-    const near = charPosRef.current.z > -6;
+    const z = charPosRef.current.z;
+
+    // Show "near return" prompt when player approaches entrance area
+    const near = z > 0;
     if (near !== nearRef.current) {
       nearRef.current = near;
       onNearReturn?.(near);
+    }
+
+    // Auto-exit: player walked all the way back to the entrance wall
+    if (!exitedRef.current && z > 4.5) {
+      exitedRef.current = true;
+      onExitReached?.();
     }
   });
 
   return (
     <>
-      <color attach="background" args={['#04030a']} />
-      <fog attach="fog" args={['#04030a', 45, 90]} />
-      <ambientLight color="#18140a" intensity={2.5} />
-      <directionalLight position={[0, 12, -25]} color="#ffcc88" intensity={3.0} />
-      <pointLight position={[0, 9,  -8]}  color="#ffaa44" intensity={9}  distance={28} decay={2} />
-      <pointLight position={[0, 9,  -28]} color="#ffaa44" intensity={7}  distance={30} decay={2} />
-      <pointLight position={[0, 9,  -48]} color="#ffcc88" intensity={12} distance={28} decay={2} />
-      <pointLight position={[-5, 3, -18]} color="#00ff41" intensity={3.5} distance={20} decay={2} />
-      <pointLight position={[ 5, 3, -18]} color="#00ff41" intensity={3.5} distance={20} decay={2} />
-      <pointLight position={[-5, 3, -38]} color="#00ff41" intensity={2.5} distance={20} decay={2} />
-      <pointLight position={[ 5, 3, -38]} color="#00ff41" intensity={2.5} distance={20} decay={2} />
+      {/* ── Movie-accurate: bright cream/white room, wall-to-wall monitors ── */}
+      <color attach="background" args={['#e6e2d8']} />
+      <fog attach="fog" args={['#e6e2d8', 40, 88]} />
 
-      {/* Floor — dark reflective marble */}
+      {/* Very bright ambient — the room glows uniformly like the movie */}
+      <ambientLight color="#fff8f0" intensity={5.5} />
+      <directionalLight position={[0, 14, -20]} color="#fff5e8" intensity={3.5} />
+      {/* Overhead strips down the length */}
+      <pointLight position={[0, 11, -10]} color="#fff8ee" intensity={18} distance={30} decay={1.5} />
+      <pointLight position={[0, 11, -30]} color="#fff8ee" intensity={16} distance={30} decay={1.5} />
+      <pointLight position={[0, 11, -50]} color="#fff5e0" intensity={14} distance={30} decay={1.5} />
+      {/* Screen glow spill */}
+      <pointLight position={[0, 5, -56]}  color="#00ff41" intensity={6}  distance={20} decay={2} />
+      <pointLight position={[-7, 5, -28]} color="#00ccff" intensity={3}  distance={18} decay={2} />
+      <pointLight position={[ 7, 5, -28]} color="#ffaa00" intensity={3}  distance={18} decay={2} />
+
+      {/* ── Cream marble floor — reflective ── */}
       <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0, -29]}>
         <planeGeometry args={[18, 60]} />
-        <meshStandardMaterial color="#08060a" roughness={0.12} metalness={0.7} />
+        <meshStandardMaterial color="#d8d4c8" roughness={0.14} metalness={0.38} />
       </mesh>
-      {/* Floor tile grid */}
+      {/* Floor tile grid — subtle gold */}
       <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0.01, -29]}>
         <planeGeometry args={[18, 60, 9, 30]} />
-        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={0.1}
-          transparent opacity={0.14} wireframe />
+        <meshStandardMaterial color="#c8c0a0" emissive="#ffcc44" emissiveIntensity={0.06}
+          transparent opacity={0.28} wireframe />
       </mesh>
 
-      {/* Ceiling with center strip */}
+      {/* ── Ceiling — white ── */}
       <mesh rotation={[Math.PI/2, 0, 0]} position={[0, 12, -29]}>
         <planeGeometry args={[18, 60]} />
-        <meshStandardMaterial color="#0e0c06" roughness={0.9} />
+        <meshStandardMaterial color="#ece8e0" roughness={0.92} />
       </mesh>
-      <mesh rotation={[Math.PI/2, 0, 0]} position={[0, 11.95, -29]}>
-        <planeGeometry args={[1.4, 60]} />
-        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={0.55}
-          transparent opacity={0.35} depthWrite={false} />
+      {/* Ceiling center luminous strip */}
+      <mesh rotation={[Math.PI/2, 0, 0]} position={[0, 11.96, -29]}>
+        <planeGeometry args={[1.2, 58]} />
+        <meshStandardMaterial color="#fffdf8" emissive="#fff5d0" emissiveIntensity={1.8}
+          transparent opacity={0.55} depthWrite={false} />
       </mesh>
 
-      {/* Side walls */}
+      {/* ── Side walls — off-white with monitor recesses ── */}
       {[-1, 1].map((s, i) => (
         <mesh key={i} position={[s * 9, 6, -29]} rotation={[0, s * Math.PI/2, 0]}>
           <planeGeometry args={[60, 12]} />
-          <meshStandardMaterial color="#0c0a06" roughness={0.88} />
+          <meshStandardMaterial color="#dedad2" roughness={0.88} />
         </mesh>
       ))}
 
-      {/* Back wall — dark, TV wall mounted on it */}
+      {/* ── Back wall — cream, covered by TV bank ── */}
       <mesh position={[0, 6, -58.1]}>
         <planeGeometry args={[18, 12]} />
-        <meshStandardMaterial color="#100d08" roughness={0.85} />
+        <meshStandardMaterial color="#d4d0c8" roughness={0.85} />
       </mesh>
 
-      {/* Entrance wall with doorway gap */}
+      {/* ── Entrance wall ── */}
       {[-4.5, 4.5].map((x, i) => (
         <mesh key={i} position={[x, 6, 4.8]}>
           <boxGeometry args={[9, 12, 0.3]} />
-          <meshStandardMaterial color="#0e0c06" roughness={0.88} />
+          <meshStandardMaterial color="#dedad2" roughness={0.88} />
         </mesh>
       ))}
-      {/* Entrance lintel above doorway */}
       <mesh position={[0, 10.5, 4.8]}>
         <boxGeometry args={[18, 3, 0.3]} />
-        <meshStandardMaterial color="#0e0c06" roughness={0.88} />
+        <meshStandardMaterial color="#dedad2" roughness={0.88} />
       </mesh>
 
-      {/* Entrance doorframe — gold */}
+      {/* ── Gold entrance doorframe ── */}
       {[[-1.45, 4, 4.85], [1.45, 4, 4.85]].map(([px, py, pz], i) => (
         <mesh key={i} position={[px, py, pz]}>
           <boxGeometry args={[0.14, 8.2, 0.14]} />
-          <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2.5} metalness={0.9} />
+          <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2.8} metalness={0.9} />
         </mesh>
       ))}
       <mesh position={[0, 8.1, 4.85]}>
         <boxGeometry args={[3.1, 0.14, 0.14]} />
-        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2.5} metalness={0.9} />
+        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2.8} metalness={0.9} />
       </mesh>
 
-      {/* Gold pillar columns — pairs down the length */}
+      {/* ── Gold columns down the length ── */}
       {[-6.8, 6.8].map((px, si) =>
         [-8, -20, -34, -48].map((pz, j) => (
           <group key={`col-${si}-${j}`} position={[px, 0, pz]}>
             <mesh position={[0, 5.5, 0]}>
-              <cylinderGeometry args={[0.2, 0.26, 11, 8]} />
-              <meshStandardMaterial color="#22180a" emissive="#ffaa44"
-                emissiveIntensity={0.65} metalness={0.88} roughness={0.18} />
+              <cylinderGeometry args={[0.22, 0.28, 11, 10]} />
+              <meshStandardMaterial color="#c8b878" emissive="#ffaa44"
+                emissiveIntensity={0.4} metalness={0.9} roughness={0.15} />
             </mesh>
-            {/* Column cap glow */}
             <mesh position={[0, 11.1, 0]}>
-              <cylinderGeometry args={[0.38, 0.38, 0.18, 8]} />
-              <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2} metalness={0.9} />
+              <cylinderGeometry args={[0.42, 0.42, 0.2, 10]} />
+              <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={1.8} metalness={0.9} />
+            </mesh>
+            <mesh position={[0, -0.02, 0]}>
+              <cylinderGeometry args={[0.38, 0.38, 0.16, 10]} />
+              <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={1.2} metalness={0.9} />
             </mesh>
           </group>
         ))
       )}
 
-      {/* Large side screens */}
-      {[[-8.85, 5.5, -14, Math.PI/2], [-8.85, 5.5, -32, Math.PI/2], [-8.85, 5.5, -50, Math.PI/2],
-        [ 8.85, 5.5, -14,-Math.PI/2], [ 8.85, 5.5, -32,-Math.PI/2], [ 8.85, 5.5, -50,-Math.PI/2]]
-        .map(([x,y,z,r], i) => <ArchitectScreen key={`S${i}`} x={x} y={y} z={z} rotY={r} w={4.2} h={2.8} seed={i} />)}
+      {/* ── Large side monitor banks — facing inward ── */}
+      {[[-8.85, 5.5, -12, Math.PI/2], [-8.85, 5.5, -30, Math.PI/2], [-8.85, 5.5, -48, Math.PI/2],
+        [ 8.85, 5.5, -12,-Math.PI/2], [ 8.85, 5.5, -30,-Math.PI/2], [ 8.85, 5.5, -48,-Math.PI/2]]
+        .map(([x,y,z,r], i) => (
+          <ArchitectScreen key={`S${i}`} x={x} y={y} z={z} rotY={r} w={4.5} h={3.0} seed={i * 5 + 3} />
+        ))}
 
-      {/* TV wall at back — 5×3 grid of monitors */}
+      {/* ── Back wall TV bank — 8×4 monitors ── */}
       <ArchitectTVWall />
 
-      {/* Floating golden code dust */}
+      {/* ── Floating code particles ── */}
       <CodeParticles />
 
+      {/* ── Ornate high-back chair ── */}
+      <ArchitectChair />
+
+      {/* ── The Architect figure ── */}
       <ArchitectFigure />
 
-      {/* Return portal — at entrance, slightly above floor */}
+      {/* ── Return portal near entrance ── */}
       <ReturnPortal
         position={[0, 2.2, 3.5]}
         label="RETURN TO HALLWAY"
@@ -839,10 +941,10 @@ function Scene({
   agentRegistryRef, flyingRef,
   onNearDoor, nearDoor, onCatch, onShoot, paused, sceneId,
   isNearTerminal, isNearExit, onNearTerminal, onNearExit, onExitRoom,
-  agentKey, onAgentSpawn, onAgentDead,
+  agentKey, onAgentSpawn, onAgentDead, onAgentMelee,
   hasKey, onCollectKey,
   agentEnabled, cameraForwardRef,
-  mobileJoystickRef, mobileJumpRef, mobileSprintRef,
+  mobileJoystickRef, mobileJumpRef, mobileSprintRef, mobileFlyUpRef, mobileFlyDownRef,
   onNearReturn,
 }) {
   const inCorridor     = sceneId === 'corridor';
@@ -884,7 +986,7 @@ function Scene({
               <group key={`sign-${d.id}`} position={[cx, 5.2, d.position.z]}>
                 {/* Backing plate */}
                 <mesh position={[0, 0, 0]}>
-                  <planeGeometry args={[2.0, 0.52]} />
+                  <planeGeometry args={[2.0, 0.26]} />
                   <meshStandardMaterial color="#000" transparent opacity={0.72} depthWrite={false} />
                 </mesh>
                 {/* Colour accent strip at top */}
@@ -911,7 +1013,7 @@ function Scene({
           })}
 
           {/* Golden beacon + long-range light makes the architect door glow from far down the hallway */}
-          <pointLight position={[0, 5, -258]} color="#ffcc44" intensity={35} distance={300} decay={1.0} />
+          <pointLight position={[0, 5, -210]} color="#ffcc44" intensity={35} distance={250} decay={1.0} />
           <ArchitectBeacon />
 
           <KeyItem playerPosRef={charPosRef} onCollect={onCollectKey} collected={hasKey} />
@@ -930,6 +1032,7 @@ function Scene({
               onRegister={registerAgent}
               onSpawn={onAgentSpawn}
               onDead={onAgentDead}
+              onMeleePunch={onAgentMelee}
               paused={paused}
               bounds={COR_BOUNDS}
             />
@@ -949,7 +1052,7 @@ function Scene({
         </>
       ) : isArchitectRoom ? (
         <>
-          <ArchitectRoom charPosRef={charPosRef} onNearReturn={onNearReturn} />
+          <ArchitectRoom charPosRef={charPosRef} onNearReturn={onNearReturn} onExitReached={onExitRoom} />
         </>
       ) : (
         <>
@@ -976,6 +1079,7 @@ function Scene({
               onRegister={registerAgent}
               onSpawn={onAgentSpawn}
               onDead={onAgentDead}
+              onMeleePunch={onAgentMelee}
               paused={paused}
               bounds={ROOM_BOUNDS}
             />
@@ -999,6 +1103,8 @@ function Scene({
         mobileJoystickRef={mobileJoystickRef}
         mobileJumpRef={mobileJumpRef}
         mobileSprintRef={mobileSprintRef}
+        mobileFlyUpRef={mobileFlyUpRef}
+        mobileFlyDownRef={mobileFlyDownRef}
       />
 
       <AdaptiveDpr pixelated />
@@ -1128,65 +1234,129 @@ const ARCHITECT_LINES = [
 ];
 
 function ArchitectDialogue({ onExit }) {
-  const [lineIdx,  setLineIdx]  = useState(0);
-  const [charIdx,  setCharIdx]  = useState(0);
-  const [waiting,  setWaiting]  = useState(false);
+  // Use refs for all mutable state to avoid stale closures in the keydown listener
+  const lineIdxRef = useRef(0);
+  const charIdxRef = useRef(0);
+  const timerRef   = useRef(null);
+  const doneRef    = useRef(false); // component exited
 
-  const line       = ARCHITECT_LINES[lineIdx];
-  const typed      = line.text.slice(0, charIdx);
-  const doneLine   = charIdx >= line.text.length;
-  const isLastLine = lineIdx === ARCHITECT_LINES.length - 1;
+  // Render state — only updated when we want a re-render
+  const [display, setDisplay] = useState({ lineIdx: 0, charIdx: 0 });
 
-  // Typewriter
+  const clearTimer = () => { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; } };
+
+  // Advance to the next character, or auto-advance line after pause
+  const tick = useCallback(() => {
+    if (doneRef.current) return;
+    const line = ARCHITECT_LINES[lineIdxRef.current];
+    if (!line) return;
+    const done = charIdxRef.current >= line.text.length;
+    if (!done) {
+      charIdxRef.current += 1;
+      setDisplay({ lineIdx: lineIdxRef.current, charIdx: charIdxRef.current });
+      timerRef.current = setTimeout(tick, line.isExit ? 0 : 52);
+    } else {
+      // Line complete — auto-advance after pause (except last line)
+      const isLast = lineIdxRef.current === ARCHITECT_LINES.length - 1;
+      if (!isLast) {
+        timerRef.current = setTimeout(() => {
+          if (doneRef.current) return;
+          lineIdxRef.current += 1;
+          charIdxRef.current  = 0;
+          setDisplay({ lineIdx: lineIdxRef.current, charIdx: 0 });
+          timerRef.current = setTimeout(tick, 52);
+        }, line.pause);
+      } else {
+        setDisplay({ lineIdx: lineIdxRef.current, charIdx: charIdxRef.current });
+      }
+    }
+  }, []);
+
+  // Advance or exit on demand (E key or tap)
+  const advance = useCallback(() => {
+    if (doneRef.current) return;
+    const line   = ARCHITECT_LINES[lineIdxRef.current];
+    const done   = charIdxRef.current >= line.text.length;
+    const isLast = lineIdxRef.current === ARCHITECT_LINES.length - 1;
+
+    if (isLast && done) { doneRef.current = true; clearTimer(); onExit(); return; }
+    if (!done) {
+      // Skip to end of current line
+      clearTimer();
+      charIdxRef.current = line.text.length;
+      setDisplay({ lineIdx: lineIdxRef.current, charIdx: charIdxRef.current });
+      // Schedule auto-advance
+      timerRef.current = setTimeout(() => {
+        if (doneRef.current) return;
+        lineIdxRef.current += 1;
+        charIdxRef.current  = 0;
+        setDisplay({ lineIdx: lineIdxRef.current, charIdx: 0 });
+        timerRef.current = setTimeout(tick, 52);
+      }, line.pause);
+      return;
+    }
+    // Line done and not last — skip the pause, advance immediately
+    clearTimer();
+    lineIdxRef.current += 1;
+    charIdxRef.current  = 0;
+    setDisplay({ lineIdx: lineIdxRef.current, charIdx: 0 });
+    timerRef.current = setTimeout(tick, 52);
+  }, [onExit, tick]);
+
+  // Start typewriter on mount
   useEffect(() => {
-    if (doneLine || waiting) return;
-    const id = setTimeout(() => setCharIdx(c => c + 1), line.isExit ? 0 : 24);
-    return () => clearTimeout(id);
-  }, [charIdx, doneLine, waiting, line]);
+    timerRef.current = setTimeout(tick, 52);
+    return () => { doneRef.current = true; clearTimer(); };
+  }, [tick]);
 
-  // Auto-advance
-  useEffect(() => {
-    if (!doneLine || isLastLine || waiting) return;
-    setWaiting(true);
-    const id = setTimeout(() => {
-      setLineIdx(l => l + 1);
-      setCharIdx(0);
-      setWaiting(false);
-    }, line.pause);
-    return () => clearTimeout(id);
-  }, [doneLine, isLastLine, waiting, line]);
-
-  // E key: skip line → advance → exit
+  // Keyboard handler
   useEffect(() => {
     const onKey = e => {
-      if (e.code !== 'KeyE') return;
-      if (isLastLine && doneLine) { onExit(); return; }
-      if (!doneLine) { setCharIdx(line.text.length); return; }
-      if (doneLine && !isLastLine && !waiting) {
-        setLineIdx(l => l + 1);
-        setCharIdx(0);
-      }
+      if (e.code === 'Escape') { doneRef.current = true; clearTimer(); onExit(); return; }
+      if (e.code === 'KeyE') advance();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [doneLine, isLastLine, waiting, line, onExit]);
+  }, [advance, onExit]);
 
-  const history = ARCHITECT_LINES.slice(Math.max(0, lineIdx - 3), lineIdx);
+  // Tap handler
+  const handleTap = useCallback((e) => {
+    e.stopPropagation();
+    advance();
+  }, [advance]);
+
+  const { lineIdx, charIdx } = display;
+  const line     = ARCHITECT_LINES[lineIdx];
+  const typed    = line.text.slice(0, charIdx);
+  const doneLine = charIdx >= line.text.length;
+  const isLast   = lineIdx === ARCHITECT_LINES.length - 1;
+  const history  = ARCHITECT_LINES.slice(Math.max(0, lineIdx - 3), lineIdx);
 
   return (
-    <div className="mx-architect">
-      <div className="mx-architect__inner">
-        <div className="mx-architect__header">THE ARCHITECT</div>
-        {history.map((l, i) => (
-          <div key={i} className="mx-architect__line mx-architect__line--history">{l.text}</div>
-        ))}
-        <div className={`mx-architect__line mx-architect__line--active${line.isExit ? ' mx-architect__line--exit' : ''}`}>
-          {typed}
-          {!doneLine && <span className="mx-architect__cursor">_</span>}
+    <div className="mx-architect" style={{ pointerEvents: 'none' }}>
+      <div className="mx-architect__inner"
+        onClick={handleTap} onTouchEnd={handleTap}
+        style={{ pointerEvents: 'all', cursor: 'pointer' }}>
+        <div className="mx-architect__header">
+          <span className="mx-architect__avatar">▣</span> THE ARCHITECT
         </div>
-        {doneLine && !isLastLine && (
-          <div className="mx-architect__hint">[ E — continue ]</div>
-        )}
+        <div className="mx-architect__speech">
+          {history.map((l, i) => (
+            <div key={i} className="mx-architect__line mx-architect__line--history">{l.text}</div>
+          ))}
+          <div className={`mx-architect__line mx-architect__line--active${line.isExit ? ' mx-architect__line--exit' : ''}`}>
+            {typed}
+            {!doneLine && <span className="mx-architect__cursor">_</span>}
+          </div>
+        </div>
+        <div className="mx-architect__footer">
+          {isLast && doneLine
+            ? <span className="mx-architect__hint mx-architect__hint--exit">[ TAP / E ] EXIT  ·  [ ESC ] EXIT</span>
+            : doneLine
+            ? <span className="mx-architect__hint">[ TAP / E ] CONTINUE  ·  [ ESC ] SKIP</span>
+            : <span className="mx-architect__hint">[ TAP / E ] SKIP LINE  ·  [ ESC ] SKIP ALL</span>
+          }
+        </div>
       </div>
     </div>
   );
@@ -1338,15 +1508,17 @@ function TutorialModal({ onStart }) {
               <Row k="FIRE"         desc="Shoot green tracer" />
               <Row k="JUMP"         desc="Jump" />
               <Row k="PUNCH"        desc="Fast combo punch (J)" />
+              <Row k="UPPER"        desc="Uppercut — launch Agent skyward" />
               <Row k="KICK"         desc="Roundhouse kick (K)" />
               <Row k="SPIN"         desc="Spinning hook kick — wide sweep (L)" />
+              <Row k="[BLOCK]"      desc="Hold to guard Agent strikes" />
               <Row k="◀ Q / R ▶"   desc="Dodge left / right" />
               <Row k="BT"           desc="Bullet Time — slows everything" />
             </div>
             <div className="mx-tutorial__tip">
-              <strong>TIP:</strong> Close range? Chain <strong>PUNCH → KICK</strong> for a quick combo.
-              When the Agent is surrounded, unleash the <strong>SPIN</strong> kick for a wide sweep.
-              Activate <strong>BT</strong> when bullets fly — slow time, then dodge out of the way.
+              <strong>TIP:</strong> Agent Smith now attacks you up close — <strong>HOLD BLOCK</strong> when he swings to nullify the hit.
+              Chain <strong>PUNCH → UPPERCUT → KICK</strong> for a devastating combo.
+              Activate <strong>BT</strong> when bullets fly — slow time, then dodge and counter.
             </div>
           </>
         ) : (
@@ -1368,8 +1540,10 @@ function TutorialModal({ onStart }) {
               <Row k="CLICK"        desc="Shoot (green tracer)" />
               <Row k="G"            desc="Reload" />
               <Row k="J"            desc="Punch — tap to combo" />
+              <Row k="U"            desc="Uppercut — launch Agent upward" />
               <Row k="K"            desc="Roundhouse kick" />
               <Row k="L"            desc="Spinning hook kick — wide sweep" />
+              <Row k="[B] hold"     desc="Block — guard Agent melee strikes" />
               <Row k="Z / F"        desc="Bullet Time — slow motion" />
             </div>
 
@@ -1536,6 +1710,8 @@ export default function MatrixGame({ resumeData }) {
   const [dodgeFlash, setDodgeFlash] = useState(false);
   const [punchFlash, setPunchFlash] = useState(false);
   const [kickFlash, setKickFlash] = useState(false);
+  const [blockFlash, setBlockFlash] = useState(false);
+  const [blocking, setBlocking] = useState(false);
   const [lockedAttempt, setLockedAttempt] = useState(false);
   const [nearAgent, setNearAgent] = useState(false);
   const [bulletWarn, setBulletWarn] = useState(null);
@@ -1606,6 +1782,8 @@ export default function MatrixGame({ resumeData }) {
   const mobileJoystickRef  = useRef({ x: 0, y: 0 });
   const mobileJumpRef      = useRef(false);
   const mobileSprintRef    = useRef(false);
+  const mobileFlyUpRef     = useRef(false);
+  const mobileFlyDownRef   = useRef(false);
   const bulletIdRef      = useRef(0);
   const corridorReturnZ  = useRef(-50);
   const currentRoomId    = useRef(null);
@@ -1613,6 +1791,8 @@ export default function MatrixGame({ resumeData }) {
   const kickCdRef        = useRef(0);
   const spinKickCdRef    = useRef(0);
   const comboCdRef       = useRef(0);
+  const upperCdRef       = useRef(0);
+  const blockRef         = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -1689,9 +1869,10 @@ export default function MatrixGame({ resumeData }) {
         setIsFlying(true);
         setIsArchitect(false);
       } else if (door.isArchitect) {
-        charPosRef.current.set(0, 0, 3);
+        charPosRef.current.set(0, 0, -2);
         flyingRef.current = false;
         setIsFlying(false);
+        setNearReturn(false);   // clear any stale nearReturn before dialogue starts
         setIsArchitect(true);
       } else {
         charPosRef.current.set(0, 0, 4);
@@ -1731,6 +1912,12 @@ export default function MatrixGame({ resumeData }) {
 
   useEffect(() => {
     const onKeyDown = e => {
+      // Architect room: Escape always exits; E exits when near the entrance portal
+      if (sceneId === 'room-architect') {
+        if (e.code === 'Escape' || (e.code === 'KeyE' && nearReturn)) exitRoom();
+        return;
+      }
+
       if (e.code === 'KeyE') {
         if (openDoor) {
           setOpenDoor(null);
@@ -1870,16 +2057,66 @@ export default function MatrixGame({ resumeData }) {
         }
       }
 
+      // Uppercut — powerful upward punch that launches agent
+      if (e.code === 'KeyU' && upperCdRef.current <= 0 && !stateRef.current.kicking) {
+        const UPPER_RANGE = 2.8;
+        const UPPER_DMG   = 58;
+        const p = charPosRef.current;
+        let hitAgent = false;
+        for (const agent of agentRegistryRef.current) {
+          const ap = agent.posRef.current;
+          const dist = Math.sqrt((p.x - ap.x) ** 2 + (p.z - ap.z) ** 2);
+          if (dist < UPPER_RANGE) {
+            agent.takeDamage(UPPER_DMG);
+            const kbDir = new THREE.Vector3(ap.x - p.x, 0.9, ap.z - p.z).normalize();
+            agent.knockback?.(kbDir, 5.5);
+            hitAgent = true;
+            break;
+          }
+        }
+        stateRef.current.punching = true;
+        stateRef.current.punchT   = 0;
+        stateRef.current.altArm   = 2; // signal uppercut arm pose
+        upperCdRef.current        = 0.9;
+        if (hitAgent) {
+          setPunchFlash(true);
+          setTimeout(() => setPunchFlash(false), 180);
+          // Brief micro-slow on hit
+          const prevScale = timeScaleRef.current;
+          if (prevScale >= 0.8) {
+            timeScaleRef.current = 0.05;
+            setTimeout(() => { timeScaleRef.current = prevScale; }, 90);
+          }
+        }
+      }
+
       if ((e.code === 'KeyZ' || e.code === 'KeyF') && !btActive && btCoolRef.current <= 0) {
         btTimerRef.current = BT_DURATION;
         setBtLeft(BT_DURATION);
         setBtActive(true);
         timeScaleRef.current = BT_SCALE;
       }
+
+      // Block — hold B to guard
+      if (e.code === 'KeyB') {
+        blockRef.current = true;
+        setBlocking(true);
+      }
+    };
+
+    const onKeyUp = e => {
+      if (e.code === 'KeyB') {
+        blockRef.current = false;
+        setBlocking(false);
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
   }, [nearDoor, openDoor, sceneId, nearTerminal, btActive, enterRoom, nearReturn, exitRoom]);
 
   useEffect(() => {
@@ -1888,6 +2125,7 @@ export default function MatrixGame({ resumeData }) {
       if (kickCdRef.current > 0) kickCdRef.current -= 0.05;
       if (spinKickCdRef.current > 0) spinKickCdRef.current -= 0.05;
       if (comboCdRef.current > 0) comboCdRef.current -= 0.05;
+      if (upperCdRef.current > 0) upperCdRef.current -= 0.05;
       if (shootCdRef.current > 0) shootCdRef.current -= 0.05;
     }, 50);
     return () => clearInterval(id);
@@ -2037,6 +2275,27 @@ export default function MatrixGame({ resumeData }) {
     setTimeout(() => setAgentKey(k => k + 1), 3000);
   }, []);
 
+  const handleAgentMelee = useCallback((dmg) => {
+    if (dead) return;
+    if (blockRef.current) {
+      // Successful block — stun the agent, no damage, brief flash
+      setBlockFlash(true);
+      setTimeout(() => setBlockFlash(false), 320);
+      // Stun all nearby agents
+      for (const a of agentRegistryRef.current) {
+        a.takeDamage(0);                         // trigger hit flash visual only
+        a.knockback?.(new THREE.Vector3(0, 0, 1), 0.1); // micro-push to reset melee timer
+      }
+      return;
+    }
+    // Not blocking — take full damage
+    neoHpRef.current = Math.max(0, neoHpRef.current - dmg);
+    setNeoHp(neoHpRef.current);
+    setHit(true);
+    setTimeout(() => setHit(false), 280);
+    if (neoHpRef.current <= 0) setDead(true);
+  }, [dead, agentRegistryRef]);
+
   const handleCollectKey = useCallback(() => {
     setHasKey(true);
     setKeyCollected(true);
@@ -2138,6 +2397,32 @@ export default function MatrixGame({ resumeData }) {
     timeScaleRef.current = BT_SCALE;
   }, [btActive]);
 
+  const handleMobileUppercut = useCallback(() => {
+    if (paused || dead || upperCdRef.current > 0 || stateRef.current.kicking) return;
+    const UPPER_RANGE = 2.8, UPPER_DMG = 58;
+    const p = charPosRef.current;
+    let hitAgent = false;
+    for (const agent of agentRegistryRef.current) {
+      const ap = agent.posRef.current;
+      const dist = Math.sqrt((p.x - ap.x) ** 2 + (p.z - ap.z) ** 2);
+      if (dist < UPPER_RANGE) {
+        agent.takeDamage(UPPER_DMG);
+        const kbDir = new THREE.Vector3(ap.x - p.x, 0.9, ap.z - p.z).normalize();
+        agent.knockback?.(kbDir, 5.5);
+        hitAgent = true;
+        break;
+      }
+    }
+    stateRef.current.punching = true;
+    stateRef.current.punchT   = 0;
+    stateRef.current.altArm   = 2;
+    upperCdRef.current        = 0.9;
+    if (hitAgent) {
+      setPunchFlash(true);
+      setTimeout(() => setPunchFlash(false), 180);
+    }
+  }, [paused, dead]);
+
   const handleMobileInteract = useCallback(() => {
     if (openDoor) {
       setOpenDoor(null);
@@ -2237,6 +2522,7 @@ export default function MatrixGame({ resumeData }) {
           agentKey={agentKey}
           onAgentSpawn={handleAgentSpawn}
           onAgentDead={handleAgentDead}
+          onAgentMelee={handleAgentMelee}
           hasKey={hasKey}
           onCollectKey={handleCollectKey}
           agentEnabled={agentEnabled}
@@ -2244,6 +2530,8 @@ export default function MatrixGame({ resumeData }) {
           mobileJoystickRef={mobileJoystickRef}
           mobileJumpRef={mobileJumpRef}
           mobileSprintRef={mobileSprintRef}
+          mobileFlyUpRef={mobileFlyUpRef}
+          mobileFlyDownRef={mobileFlyDownRef}
         />
 
         {bullets.map(b => (
@@ -2339,15 +2627,17 @@ export default function MatrixGame({ resumeData }) {
 
       {btActive && <BulletTimeOverlay timeLeft={btLeft} maxTime={BT_DURATION} />}
       {isFlying && <FlyingHUD charPosRef={charPosRef} />}
-      {isArchitect && <ArchitectDialogue onExit={exitRoom} />}
+      {sceneId === 'room-architect' && <ArchitectDialogue onExit={exitRoom} />}
       {keyCollected && <KeyCollectedOverlay />}
       {caught && <CaughtOverlay />}
       {hit && <HitOverlay />}
       {punchFlash && <PunchHitOverlay />}
       {kickFlash && <KickImpactOverlay />}
+      {blockFlash && <div className="mx-overlay mx-block-flash" />}
+      {blocking && <div className="mx-blocking-hud">⬡ BLOCKING</div>}
       {lockedAttempt && <AccessDeniedOverlay />}
 
-      {!openDoor && !isFlying && !isArchitect && (
+      {!openDoor && !isFlying && sceneId !== 'room-architect' && (
         <AmmoDisplay ammo={ammo} reserveAmmo={reserveAmmo} isReloading={isReloading} />
       )}
 
@@ -2370,7 +2660,7 @@ export default function MatrixGame({ resumeData }) {
         <div className="mx-controls-hint">
           {isFlying
             ? 'WASD MOVE · SPACE FLY UP · CTRL FLY DOWN · Z/F BULLET-TIME'
-            : 'CLICK SHOOT · G RELOAD · WASD MOVE · SHIFT SPRINT · SPACE JUMP · Q/R DODGE · CTRL DUCK · J PUNCH · K ROUNDHOUSE · L SPIN HOOK · Z/F BT · E INTERACT'}
+            : 'CLICK SHOOT · G RELOAD · WASD MOVE · SHIFT SPRINT · SPACE JUMP · Q/R DODGE · CTRL DUCK · J PUNCH · U UPPERCUT · K ROUNDHOUSE · L SPIN HOOK · [B] BLOCK · Z/F BT · E INTERACT'}
         </div>
       )}
 
@@ -2381,15 +2671,21 @@ export default function MatrixGame({ resumeData }) {
           mobileJoystickRef={mobileJoystickRef}
           mobileJumpRef={mobileJumpRef}
           mobileSprintRef={mobileSprintRef}
+          mobileFlyUpRef={mobileFlyUpRef}
+          mobileFlyDownRef={mobileFlyDownRef}
           onShoot={firePlayerBullet}
           onPunch={handleMobilePunch}
           onKick={handleMobileKick}
           onSpinKick={handleMobileSpinKick}
+          onUppercut={handleMobileUppercut}
           onDodgeLeft={handleMobileDodgeLeft}
           onDodgeRight={handleMobileDodgeRight}
           onBulletTime={handleMobileBulletTime}
           onInteract={handleMobileInteract}
+          blockRef={blockRef}
           canInteract={canInteract}
+          isFlying={isFlying}
+          isArchitect={sceneId === 'room-architect'}
           paused={paused}
         />
       )}

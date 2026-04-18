@@ -854,13 +854,154 @@ function OracleRoom({ isNearTerminal, isNearExit }) {
   );
 }
 
+// ── Room 5: ZION MAINFRAME (locked-3) ────────────────────────────────────────
+function ZionRoom({ isNearTerminal, isNearExit }) {
+  // Blinking server indicators
+  const indicatorRefs = useRef([]);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    indicatorRefs.current.forEach((m, i) => {
+      if (!m) return;
+      m.emissiveIntensity = (Math.sin(t * (1.8 + i * 0.4) + i * 1.3) > 0.6) ? 3.5 : 0.2;
+    });
+  });
+
+  // Server racks — two rows along each side wall
+  const racks = [];
+  for (let row = 0; row < 2; row++) {
+    const xPos = row === 0 ? -(HW - 0.9) : (HW - 0.9);
+    for (let j = 0; j < 6; j++) {
+      const zPos = -10 - j * 7;
+      racks.push({ id: `rack-${row}-${j}`, x: xPos, z: zPos, flip: row === 1 });
+    }
+  }
+
+  return (
+    <>
+      <color attach="background" args={['#020408']} />
+      <fog attach="fog" args={['#020408', 18, 72]} />
+
+      {/* Dim ambient — underground bunker feel */}
+      <ambientLight color="#102030" intensity={1.2} />
+      {/* Red emergency strips */}
+      <pointLight position={[0, 7, -20]} color="#cc1100" intensity={12} distance={28} decay={1.8} />
+      <pointLight position={[0, 7, -45]} color="#aa0800" intensity={10} distance={28} decay={1.8} />
+      {/* Cool blue server glow */}
+      <pointLight position={[-HW + 1, 3, -25]} color="#0044cc" intensity={8} distance={18} decay={2} />
+      <pointLight position={[ HW - 1, 3, -25]} color="#0044cc" intensity={8} distance={18} decay={2} />
+      <pointLight position={[-HW + 1, 3, -48]} color="#003399" intensity={6} distance={18} decay={2} />
+      <pointLight position={[ HW - 1, 3, -48]} color="#003399" intensity={6} distance={18} decay={2} />
+
+      {/* ── Floor — dark brushed concrete ── */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -D / 2]}>
+        <planeGeometry args={[HW * 2, D]} />
+        <meshStandardMaterial color="#0a0c10" roughness={0.88} metalness={0.12} />
+      </mesh>
+      {/* Floor cable-tray grid */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -D / 2]}>
+        <planeGeometry args={[HW * 2, D, 8, 28]} />
+        <meshStandardMaterial color="#0d1520" emissive="#002244" emissiveIntensity={0.08}
+          wireframe transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+
+      {/* ── Ceiling ── */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, -D / 2]}>
+        <planeGeometry args={[HW * 2, D]} />
+        <meshStandardMaterial color="#060810" roughness={0.95} />
+      </mesh>
+      {/* Red emergency light strips along ceiling edges */}
+      {[-HW + 0.6, HW - 0.6].map((x, i) => (
+        <mesh key={i} position={[x, H - 0.15, -D / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.18, D - 4]} />
+          <meshStandardMaterial color="#cc1100" emissive="#ff1100" emissiveIntensity={1.2}
+            transparent opacity={0.55} depthWrite={false} />
+        </mesh>
+      ))}
+
+      {/* ── Walls ── */}
+      {[-1, 1].map((s, i) => (
+        <mesh key={i} position={[s * HW, H / 2, -D / 2]} rotation={[0, s * Math.PI / 2, 0]}>
+          <planeGeometry args={[D, H]} />
+          <meshStandardMaterial color="#080c12" roughness={0.9} />
+        </mesh>
+      ))}
+      <mesh position={[0, H / 2, -D]} rotation={[0, Math.PI, 0]}>
+        <planeGeometry args={[HW * 2, H]} />
+        <meshStandardMaterial color="#060a10" roughness={0.9} />
+      </mesh>
+
+      {/* ── Server racks ── */}
+      {racks.map(({ id, x, z, flip }, ri) => (
+        <group key={id} position={[x, 0, z]} rotation={[0, flip ? 0 : Math.PI, 0]}>
+          {/* Rack chassis */}
+          <mesh position={[0, 2.2, 0]}>
+            <boxGeometry args={[1.1, 4.4, 0.72]} />
+            <meshStandardMaterial color="#080e14" roughness={0.5} metalness={0.8} />
+          </mesh>
+          {/* Front panel — blue LED rows */}
+          {[0.6, 0.0, -0.6, -1.2].map((dy, li) => (
+            <mesh key={li} position={[0, 2.2 + dy, -0.34]}>
+              <boxGeometry args={[0.92, 0.44, 0.02]} />
+              <meshStandardMaterial color="#040810" emissive="#002244" emissiveIntensity={0.6} />
+            </mesh>
+          ))}
+          {/* Individual blinking indicators */}
+          {[0, 1, 2].map((bi) => {
+            const idx = ri * 3 + bi;
+            return (
+              <mesh key={bi} position={[(-0.3 + bi * 0.3), 3.6, -0.365]}
+                ref={el => { indicatorRefs.current[idx] = el?.material ?? null; }}>
+                <boxGeometry args={[0.06, 0.06, 0.01]} />
+                <meshStandardMaterial
+                  color={bi === 1 ? '#ff2200' : '#00aaff'}
+                  emissive={bi === 1 ? '#ff2200' : '#00aaff'}
+                  emissiveIntensity={0.5}
+                />
+              </mesh>
+            );
+          })}
+          {/* Side vents */}
+          <mesh position={[0.52, 2.2, 0]}>
+            <boxGeometry args={[0.06, 4.2, 0.6]} />
+            <meshStandardMaterial color="#050a10" roughness={0.6} metalness={0.9} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* ── Centre aisle overhead cable tray ── */}
+      <mesh position={[0, H - 0.8, -D / 2]}>
+        <boxGeometry args={[0.8, 0.12, D - 4]} />
+        <meshStandardMaterial color="#0a0e16" roughness={0.6} metalness={0.85} />
+      </mesh>
+
+      {/* ── Classified warning banner at far end ── */}
+      <Billboard follow={false} position={[0, 5, EZ + 1]}>
+        <Text fontSize={0.38} color="#cc1100" anchorX="center" anchorY="middle"
+          letterSpacing={0.18} outlineWidth={0.02} outlineColor="#000">
+          ⬛ ZION MAINFRAME — CLASSIFIED ⬛
+        </Text>
+        <Text position={[0, -0.7, 0]} fontSize={0.22} color="#ff3300"
+          anchorX="center" anchorY="middle" letterSpacing={0.1} outlineWidth={0.015} outlineColor="#000">
+          UNAUTHORISED ACCESS IS A WAR CRIME
+        </Text>
+      </Billboard>
+
+      {/* ── Standard terminal + exit portal ── */}
+      <Terminal color="#cc1100" label="ZION MAINFRAME" isNear={isNearTerminal} />
+      <ExitPortal isNear={isNearExit} />
+    </>
+  );
+}
+
 // ── Proximity checker ─────────────────────────────────────────────────────────
-const EXIT_NEAR = 6.0; // show "EXIT" text when this close
+const EXIT_NEAR     = 6.0; // show "EXIT" text when this close
+const ENTRANCE_BACK = 2.5; // z threshold — walking back past here triggers exit
 
 function RoomProximity({ playerPosRef, onNearTerminal, onNearExit, onExitReached }) {
-  const nearTermRef = useRef(false);
-  const nearExitRef = useRef(false);
-  const exitDoneRef = useRef(false);
+  const nearTermRef    = useRef(false);
+  const nearExitRef    = useRef(false);
+  const exitDoneRef    = useRef(false);
+  const entrExitDone   = useRef(false);
 
   useFrame(() => {
     const p   = playerPosRef.current;
@@ -874,7 +1015,7 @@ function RoomProximity({ playerPosRef, onNearTerminal, onNearExit, onExitReached
       onNearTerminal(near);
     }
 
-    // Exit proximity
+    // Exit proximity (far end portal)
     const dze   = Math.abs(p.z - EZ);
     const nearE = dze < EXIT_NEAR;
     if (nearE !== nearExitRef.current) {
@@ -882,9 +1023,15 @@ function RoomProximity({ playerPosRef, onNearTerminal, onNearExit, onExitReached
       onNearExit(nearE);
     }
 
-    // Auto-exit
+    // Auto-exit — far portal
     if (!exitDoneRef.current && p.z < EZ - EXIT_TRIGGER) {
       exitDoneRef.current = true;
+      onExitReached();
+    }
+
+    // Walk-back exit — player returns to entrance
+    if (!entrExitDone.current && p.z > ENTRANCE_BACK) {
+      entrExitDone.current = true;
       onExitReached();
     }
   });
@@ -897,6 +1044,7 @@ const ROOM_MAP = {
   resume:    CityStreetRoom,
   portfolio: MountainRoom,
   contact:   OracleRoom,
+  'locked-3': ZionRoom,
 };
 
 export default function MatrixRoom({ roomId, playerPosRef, isNearTerminal, isNearExit, onNearTerminal, onNearExit, onExitReached }) {

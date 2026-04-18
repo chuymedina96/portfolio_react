@@ -402,6 +402,8 @@ export default function PlayerCharacter({
   mobileJoystickRef,
   mobileJumpRef,
   mobileSprintRef,
+  mobileFlyUpRef,
+  mobileFlyDownRef,
 }) {
   const { gl } = useThree();
   const keys    = useControls();
@@ -539,8 +541,8 @@ export default function PlayerCharacter({
     if (isFlying) {
       const flySpd = 20;
       if (!paused) {
-        if (k.Space)                             pos.y += flySpd * dt;
-        if (k.ControlLeft || k.ControlRight)     pos.y -= flySpd * dt;
+        if (k.Space || mobileFlyUpRef?.current)                              pos.y += flySpd * dt;
+        if (k.ControlLeft || k.ControlRight || mobileFlyDownRef?.current)    pos.y -= flySpd * dt;
       }
       pos.y = THREE.MathUtils.clamp(pos.y, -10, 130);
       j.vy      = 0;
