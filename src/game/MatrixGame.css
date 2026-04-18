@@ -1025,14 +1025,14 @@
     border: 1px solid rgba(0, 255, 65, 0.13);
   }
   .mx-door-list__sep         { display: none; }
-  .mx-door-list__item--locked { display: none; }   /* hide restricted/locked rooms */
   .mx-door-list__item        { padding: 3px 7px; background: transparent; border-color: transparent; }
+  .mx-door-list__item--locked { opacity: 0.55; }
   .mx-door-list__item--active {
     background: color-mix(in srgb, var(--c) 12%, transparent);
     border-color: color-mix(in srgb, var(--c) 45%, transparent);
   }
-  .mx-door-list__name { font-size: 0.62rem; letter-spacing: 0.09em; }
-  .mx-door-list__item--active .mx-door-list__name { font-size: 0.64rem; }
+  .mx-door-list__name { font-size: 0.60rem; letter-spacing: 0.09em; }
+  .mx-door-list__item--active .mx-door-list__name { font-size: 0.62rem; }
 
   /* The hud-starmap is redundant with the door list on mobile — hide it */
   .matrix-hud .hud-starmap { display: none !important; }
@@ -1056,36 +1056,35 @@
     min-height: 2.6em;
   }
 
-  /* Health bar: move to top-right below the ammo display */
+  /* Health bar: bottom-left, above the joystick idle hint */
   .mx-health {
-    bottom: auto;
-    top: 96px;
-    left: auto;
-    right: 14px;
-    position: fixed;
+    bottom: 148px;
+    top: auto;
+    left: 10px;
+    right: auto;
     background: rgba(0, 0, 0, 0.55);
     padding: 5px 9px 7px;
     border-radius: 6px;
     border: 1px solid rgba(0, 255, 65, 0.18);
   }
   .mx-health__label {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     color: rgba(180, 255, 180, 0.92);
     letter-spacing: 0.12em;
   }
   .mx-health__track {
-    width: 130px;
-    height: 11px;
+    width: 120px;
+    height: 10px;
     border: 1px solid rgba(0, 255, 65, 0.38);
   }
   .mx-health__fill { height: 100%; }
 
-  /* Key / red pill indicator: below health bar on the right */
+  /* Key / red pill indicator: just above the health bar */
   .mx-key-indicator {
-    bottom: auto;
-    top: 162px;
-    right: 14px;
-    left: unset;
+    bottom: 208px;
+    top: auto;
+    left: 10px;
+    right: unset;
     font-size: 0.68rem;
   }
 

@@ -1701,6 +1701,7 @@ function AmmoDisplay({ ammo, reserveAmmo, isReloading, onReload }) {
     >
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+          <div style={{ fontSize: '0.75rem', marginRight: 2, opacity: 0.7 }}>🔫</div>
           <div className="mx-ammo__clip" style={{ color }}>
             {isReloading ? 'RLD...' : String(ammo).padStart(2, '0')}
           </div>
