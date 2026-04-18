@@ -1056,9 +1056,9 @@
     min-height: 2.6em;
   }
 
-  /* Health bar: bottom-left, above the joystick idle hint */
+  /* Health bar: pinned to bottom-left corner */
   .mx-health {
-    bottom: 148px;
+    bottom: 12px;
     top: auto;
     left: 10px;
     right: auto;
@@ -1081,7 +1081,7 @@
 
   /* Key / red pill indicator: just above the health bar */
   .mx-key-indicator {
-    bottom: 208px;
+    bottom: 72px;
     top: auto;
     left: 10px;
     right: unset;

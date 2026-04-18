@@ -128,7 +128,7 @@ export default function MobileControls({
       const isLeft = t.clientX < window.innerWidth * LEFT_ZONE_FRAC;
 
       // In architect room, left-side joystick is blocked (dialogue mode — no movement)
-      if (isLeft && !joyTouchRef.current && !isArchitect) {
+      if (isLeft && !joyTouchRef.current) {
         joyTouchRef.current = { id: t.identifier, baseX: t.clientX, baseY: t.clientY };
         mobileJoystickRef.current = { x: 0, y: 0 };
 

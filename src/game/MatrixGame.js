@@ -2474,17 +2474,48 @@ export default function MatrixGame({ resumeData }) {
   }, [phase, isMobile]);
 
   const handleRestart = useCallback(() => {
+    // Reset health
     neoHpRef.current = 100;
     setNeoHp(100);
     setDead(false);
+
+    // Return player to corridor start
+    charPosRef.current.set(0, 0, 0);
+    yawRef.current   = 0;
+    pitchRef.current = 0;
+    setSceneId('corridor');
+    currentRoomId.current = null;
+
+    // Clear room-specific state
     flyingRef.current = false;
     setIsFlying(false);
+    setIsArchitect(false);
+    setOpenDoor(null);
+    setNearDoor(null);
+    setNearReturn(false);
+
+    // Clear combat / animation state
+    stateRef.current.punching    = false;
+    stateRef.current.kicking     = false;
+    stateRef.current.spinKicking = false;
+    stateRef.current.punchT      = 0;
+    stateRef.current.kickT       = 0;
+    stateRef.current.spinKickT   = 0;
+
+    // Clear stuck mobile joystick
+    mobileJoystickRef.current = { x: 0, y: 0 };
+    if (mobileSprintRef) mobileSprintRef.current = false;
+
+    // Respawn fresh agent
     setAgentKey(k => k + 1);
     setBullets([]);
+    setPlayerBullets([]);
+
     if (!isMobile) {
       setTimeout(() => document.querySelector('canvas')?.requestPointerLock(), 80);
     }
-  }, [isMobile]);
+  }, [isMobile, charPosRef, yawRef, pitchRef, stateRef, flyingRef,
+      mobileJoystickRef, mobileSprintRef]);
 
   if (phase === 'intro') return <WakeUpSequence onDone={() => setPhase('tutorial')} />;
   if (phase === 'tutorial') return <TutorialModal onStart={() => setPhase('playing')} />;
