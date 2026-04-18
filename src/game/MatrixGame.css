@@ -706,10 +706,19 @@
   bottom: 52px; right: 22px;
   z-index: 15;
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   gap: 6px;
   font-family: 'Share Tech Mono', monospace;
-  pointer-events: none;
+  pointer-events: all;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mx-ammo__reload-hint {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  opacity: 0.9;
+  text-shadow: 0 0 6px currentColor;
+  animation: btPulse 0.7s ease-in-out infinite alternate;
 }
 .mx-ammo__clip {
   font-size: 2rem;
@@ -731,8 +740,21 @@
 }
 
 @media (pointer: coarse), (max-width: 768px) {
-  .mx-ammo { bottom: 220px; right: 14px; }
-  .mx-ammo__clip { font-size: 1.5rem; }
+  /* Move ammo to top-right — far from the button stack. Tap to reload. */
+  .mx-ammo {
+    bottom: auto; top: 14px; right: 14px;
+    background: rgba(0,0,0,0.55);
+    padding: 5px 9px 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(0,255,65,0.18);
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+  .mx-ammo__clip    { font-size: 1.3rem; }
+  .mx-ammo__sep     { font-size: 0.85rem; }
+  .mx-ammo__reserve { font-size: 0.85rem; }
+  .mx-ammo__reload-hint { font-size: 0.6rem; }
 }
 
 /* ── Corridor door list HUD ─────────────────────────────────────────────────── */
@@ -955,25 +977,37 @@
   /* Reticle crosshair is keyboard/mouse aiming aid — not needed on touch */
   .mx-reticle { display: none; }
 
-  /* Health bar: move from bottom-left (joystick zone) to top-left, below system map */
+  /* Health bar: move to top-left, larger and more readable on mobile */
   .mx-health {
     bottom: auto;
-    top: 80px;
+    top: 50px;
     left: 8px;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 5px 9px 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 255, 65, 0.18);
   }
-  .mx-health__track { width: 130px; }
+  .mx-health__label {
+    font-size: 0.82rem;
+    color: rgba(180, 255, 180, 0.92);
+    letter-spacing: 0.12em;
+  }
+  .mx-health__track {
+    width: 150px;
+    height: 11px;
+    border: 1px solid rgba(0, 255, 65, 0.38);
+  }
+  .mx-health__fill { height: 100%; }
 
-  /* Key / red pill indicator: move away from fire button zone */
+  /* Key / red pill indicator: sits just below health bar on mobile */
   .mx-key-indicator {
     bottom: auto;
-    top: 116px;
+    top: 130px;
     right: unset;
-    left: 8px;
+    left: 12px;
     font-size: 0.68rem;
   }
 
-  /* Ammo display: already at bottom: 220px right; keep but verify it clears buttons.
-     Action button rows max out at ~194px from bottom, so 220px is safe. */
 
   /* Door / terminal prompts: center them higher so they clear the INTERACT button */
   .mx-door-prompt   { bottom: 200px; }

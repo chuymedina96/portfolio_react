@@ -321,22 +321,25 @@ export default function MobileControls({
         ) : (
           /* ── Normal combat buttons ───────────────────────────────────────── */
           <>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <Btn color="#ffaa00" w={62} h={42} onPress={onDodgeLeft}>◄ DODGE</Btn>
-              <Btn color="#ffaa00" w={62} h={42} onPress={onDodgeRight}>DODGE ►</Btn>
-              <Btn color="#aa88ff" w={46} h={42} onPress={onBulletTime}>BT</Btn>
+            {/* Row 1: dodge + bullet time — compact height */}
+            <div style={{ display: 'flex', gap: 5 }}>
+              <Btn color="#ffaa00" w={58} h={36} onPress={onDodgeLeft}>◄ DGE</Btn>
+              <Btn color="#ffaa00" w={58} h={36} onPress={onDodgeRight}>DGE ►</Btn>
+              <Btn color="#aa88ff" w={42} h={36} onPress={onBulletTime}>BT</Btn>
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <Btn color="#00bbff" w={55} h={48} onPress={onPunch}>PUNCH</Btn>
-              <Btn color="#00bbff" w={48} h={48} onPress={onKick}>KICK</Btn>
-              <Btn color="#00bbff" w={48} h={48} onPress={onSpinKick}>SPIN</Btn>
-              <Btn color="#ffcc44" w={55} h={48} onPress={onUppercut}>UPPER</Btn>
+            {/* Row 2: strikes */}
+            <div style={{ display: 'flex', gap: 5 }}>
+              <Btn color="#00bbff" w={50} h={44} onPress={onPunch}>PUNCH</Btn>
+              <Btn color="#00bbff" w={44} h={44} onPress={onKick}>KICK</Btn>
+              <Btn color="#00bbff" w={44} h={44} onPress={onSpinKick}>SPIN</Btn>
+              <Btn color="#ffcc44" w={50} h={44} onPress={onUppercut}>UPPER</Btn>
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <Btn color="#00ff41" w={62} h={64} onPress={() => { mobileJumpRef.current = true; }}>JUMP</Btn>
-              <HoldBtn color="#00ffcc" w={66} h={64} flyRef={blockRef}
+            {/* Row 3: movement + fire */}
+            <div style={{ display: 'flex', gap: 5 }}>
+              <Btn color="#00ff41" w={56} h={58} onPress={() => { mobileJumpRef.current = true; }}>JUMP</Btn>
+              <HoldBtn color="#00ffcc" w={60} h={58} flyRef={blockRef}
                 onStart={onBlockStart} onEnd={onBlockEnd}>BLOCK</HoldBtn>
-              <Btn color="#ff3300" w={74} h={64} onPress={onShoot}
+              <Btn color="#ff3300" w={70} h={58} onPress={onShoot}
                 style={{ fontSize: 16 }}>FIRE</Btn>
             </div>
           </>

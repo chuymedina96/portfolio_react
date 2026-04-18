@@ -1679,17 +1679,31 @@ function AgentGunPickup({ position, charPosRef, onPickup }) {
 }
 
 // ── Ammo HUD ──────────────────────────────────────────────────────────────────
-function AmmoDisplay({ ammo, reserveAmmo, isReloading }) {
+function AmmoDisplay({ ammo, reserveAmmo, isReloading, onReload }) {
   const empty = ammo === 0;
   const low   = ammo <= 8 && ammo > 0;
   const color = isReloading ? '#ffaa00' : empty ? '#ff3300' : low ? '#ffcc00' : '#00ff41';
   return (
-    <div className="mx-ammo">
-      <div className="mx-ammo__clip" style={{ color }}>
-        {isReloading ? 'RELOADING...' : String(ammo).padStart(2, '0')}
+    <div
+      className="mx-ammo"
+      onTouchStart={e => { e.stopPropagation(); onReload?.(); }}
+      onClick={onReload}
+      style={{ pointerEvents: 'all', cursor: 'pointer' }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+          <div className="mx-ammo__clip" style={{ color }}>
+            {isReloading ? 'RLD...' : String(ammo).padStart(2, '0')}
+          </div>
+          <div className="mx-ammo__sep">|</div>
+          <div className="mx-ammo__reserve">{String(reserveAmmo).padStart(3, '0')}</div>
+        </div>
+        {(empty || low || isReloading) && (
+          <div className="mx-ammo__reload-hint" style={{ color: isReloading ? '#ffaa00' : '#ff4400' }}>
+            {isReloading ? '● RELOADING' : '[ TAP / G ] RELOAD'}
+          </div>
+        )}
       </div>
-      <div className="mx-ammo__sep">|</div>
-      <div className="mx-ammo__reserve">{String(reserveAmmo).padStart(3, '0')}</div>
     </div>
   );
 }
@@ -1945,11 +1959,10 @@ export default function MatrixGame({ resumeData }) {
         const yaw   = yawRef.current;
         const fwd   = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
         const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-        const boost = btActive ? 2.5 : 1.0;
-        const dir   = dirFn(fwd, right);
+        const dir = dirFn(fwd, right);
 
         if (dir.lengthSq() > 0) {
-          dir.normalize().multiplyScalar(DODGE_SPD * boost);
+          dir.normalize().multiplyScalar(DODGE_SPD);
           dodgeRef.current = { active: true, vel: dir, t: DODGE_DUR, tMax: DODGE_DUR };
           stateRef.current.dodging = true;
           stateRef.current.dodgeDir = dir.x < 0 ? -1 : 1;
@@ -2124,12 +2137,12 @@ export default function MatrixGame({ resumeData }) {
 
   useEffect(() => {
     const id = setInterval(() => {
-      if (punchCdRef.current > 0) punchCdRef.current -= 0.05;
-      if (kickCdRef.current > 0) kickCdRef.current -= 0.05;
-      if (spinKickCdRef.current > 0) spinKickCdRef.current -= 0.05;
-      if (comboCdRef.current > 0) comboCdRef.current -= 0.05;
-      if (upperCdRef.current > 0) upperCdRef.current -= 0.05;
-      if (shootCdRef.current > 0) shootCdRef.current -= 0.05;
+      if (punchCdRef.current > 0)     punchCdRef.current     = Math.max(0, punchCdRef.current     - 0.05);
+      if (kickCdRef.current > 0)       kickCdRef.current       = Math.max(0, kickCdRef.current       - 0.05);
+      if (spinKickCdRef.current > 0)   spinKickCdRef.current   = Math.max(0, spinKickCdRef.current   - 0.05);
+      if (comboCdRef.current > 0)      comboCdRef.current      = Math.max(0, comboCdRef.current      - 0.05);
+      if (upperCdRef.current > 0)      upperCdRef.current      = Math.max(0, upperCdRef.current      - 0.05);
+      if (shootCdRef.current > 0)      shootCdRef.current      = Math.max(0, shootCdRef.current      - 0.05);
     }, 50);
     return () => clearInterval(id);
   }, []);
@@ -2372,8 +2385,7 @@ export default function MatrixGame({ resumeData }) {
     if (dodgeRef.current.active) return;
     const yaw   = yawRef.current;
     const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-    const boost = timeScaleRef.current < 0.5 ? 2.5 : 1.0;
-    const dir   = right.clone().negate().normalize().multiplyScalar(DODGE_SPD * boost);
+    const dir   = right.clone().negate().normalize().multiplyScalar(DODGE_SPD);
     dodgeRef.current = { active: true, vel: dir, t: DODGE_DUR, tMax: DODGE_DUR };
     stateRef.current.dodging = true;
     stateRef.current.dodgeDir = -1;
@@ -2385,8 +2397,7 @@ export default function MatrixGame({ resumeData }) {
     if (dodgeRef.current.active) return;
     const yaw   = yawRef.current;
     const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-    const boost = timeScaleRef.current < 0.5 ? 2.5 : 1.0;
-    const dir   = right.clone().normalize().multiplyScalar(DODGE_SPD * boost);
+    const dir   = right.clone().normalize().multiplyScalar(DODGE_SPD);
     dodgeRef.current = { active: true, vel: dir, t: DODGE_DUR, tMax: DODGE_DUR };
     stateRef.current.dodging = true;
     stateRef.current.dodgeDir = 1;
@@ -2403,7 +2414,7 @@ export default function MatrixGame({ resumeData }) {
   }, [btActive]);
 
   const handleMobileUppercut = useCallback(() => {
-    if (paused || dead || upperCdRef.current > 0 || stateRef.current.kicking) return;
+    if (paused || dead || upperCdRef.current > 0.01) return;
     const UPPER_RANGE = 2.8, UPPER_DMG = 58;
     const p = charPosRef.current;
     let hitAgent = false;
@@ -2643,7 +2654,7 @@ export default function MatrixGame({ resumeData }) {
       {lockedAttempt && <AccessDeniedOverlay />}
 
       {!openDoor && !isFlying && sceneId !== 'room-architect' && (
-        <AmmoDisplay ammo={ammo} reserveAmmo={reserveAmmo} isReloading={isReloading} />
+        <AmmoDisplay ammo={ammo} reserveAmmo={reserveAmmo} isReloading={isReloading} onReload={startReload} />
       )}
 
       {!openDoor && <NeoHealthBar hp={neoHp} />}
