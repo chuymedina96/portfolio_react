@@ -854,7 +854,149 @@ function OracleRoom({ isNearTerminal, isNearExit }) {
   );
 }
 
-// ── Room 5: ZION MAINFRAME (locked-3) ────────────────────────────────────────
+// ── Room 5: THE ARCHITECT'S CHAMBER ──────────────────────────────────────────
+function ArchitectRoom() {
+  const R     = 8;    // cylinder radius
+  const CZ    = -8;   // centre Z (front wall sits at z=0)
+  const H     = 7;    // room height
+  const COLS  = 14;   // monitors per row
+  const ROWS  = 3;    // monitor rows
+  const MON_W = 1.3;
+  const MON_H = 1.0;
+
+  const screenRefs = useRef([]);
+
+  const monitors = useMemo(() => {
+    const list = [];
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const idx   = row * COLS + col;
+        const angle = (col / COLS) * Math.PI * 2;
+        list.push({
+          angle,
+          y:     1.1 + row * 1.85,
+          phase: idx * 0.431,
+          freq:  1.1 + (idx % 7) * 0.22,
+          chan:  idx % 4,
+          idx,
+        });
+      }
+    }
+    return list;
+  }, []);
+
+  // Four "channel" colours — white news, cool blue, matrix cyan, warm white
+  const CHAN = ['#ffffff', '#cce8ff', '#aafff0', '#fff5e0'];
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    screenRefs.current.forEach((mat, i) => {
+      if (!mat) return;
+      const { freq, phase } = monitors[i];
+      const base   = 1.5 + Math.sin(t * freq + phase) * 0.8;
+      const glitch = Math.sin(t * 43.1 + phase * 11) > 0.96 ? 0.15 : 1;
+      mat.emissiveIntensity = base * glitch;
+    });
+  });
+
+  return (
+    <group>
+      <color attach="background" args={['#f2f2f2']} />
+      <fog   attach="fog"        args={['#f2f2f2', 14, 28]} />
+
+      {/* Blinding white ceiling fill */}
+      <ambientLight color="#ffffff" intensity={5} />
+      <pointLight position={[0,  H - 0.5,  CZ    ]} color="#ffffff" intensity={35} distance={25} decay={2} />
+      <pointLight position={[-4, H - 0.5,  CZ - 3]} color="#f0f8ff" intensity={20} distance={20} decay={2} />
+      <pointLight position={[ 4, H - 0.5,  CZ + 3]} color="#f0f8ff" intensity={20} distance={20} decay={2} />
+      {/* Floor bounce */}
+      <pointLight position={[0, 0.6, CZ]} color="#ffffff" intensity={10} distance={18} decay={2} />
+
+      {/* Floor — glossy white disc */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, CZ]}>
+        <circleGeometry args={[R, 60]} />
+        <meshStandardMaterial color="#f8f8f8" roughness={0.06} metalness={0.04} />
+      </mesh>
+      {/* Subtle floor reflection ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, CZ]}>
+        <ringGeometry args={[R * 0.25, R * 0.82, 48]} />
+        <meshStandardMaterial color="#ffffff" transparent opacity={0.16}
+          roughness={0.04} metalness={0.5} depthWrite={false} />
+      </mesh>
+
+      {/* Ceiling disc */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, CZ]}>
+        <circleGeometry args={[R, 60]} />
+        <meshStandardMaterial color="#fafafa" roughness={0.1} />
+      </mesh>
+      {/* Glowing ceiling ring */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H - 0.02, CZ]}>
+        <ringGeometry args={[R * 0.55, R * 0.92, 48]} />
+        <meshStandardMaterial color="#ffffff" emissive="#ffffff"
+          emissiveIntensity={1.5} transparent opacity={0.6} depthWrite={false} />
+      </mesh>
+
+      {/* Cylindrical wall — rendered from inside */}
+      <mesh position={[0, H / 2, CZ]}>
+        <cylinderGeometry args={[R, R, H, 60, 1, true]} />
+        <meshStandardMaterial color="#f0f0f0" roughness={0.1} side={THREE.BackSide} />
+      </mesh>
+
+      {/* Monitors arranged around the cylinder wall */}
+      {monitors.map(({ angle, y, chan, idx }) => {
+        const mx = (R - 0.13) * Math.sin(angle);
+        const mz = CZ + (R - 0.13) * Math.cos(angle);
+        const ry = Math.PI - angle;
+        return (
+          <group key={idx} position={[mx, y, mz]} rotation={[0, ry, 0]}>
+            {/* Bezel — thin white/silver frame */}
+            <mesh>
+              <boxGeometry args={[MON_W + 0.1, MON_H + 0.1, 0.06]} />
+              <meshStandardMaterial color="#e0e0e0" roughness={0.3} metalness={0.5} />
+            </mesh>
+            {/* Screen surface */}
+            <mesh position={[0, 0, 0.035]}
+              ref={el => { screenRefs.current[idx] = el?.material ?? null; }}>
+              <boxGeometry args={[MON_W, MON_H, 0.015]} />
+              <meshStandardMaterial
+                color={CHAN[chan]}
+                emissive={CHAN[chan]}
+                emissiveIntensity={2}
+                roughness={0.1}
+              />
+            </mesh>
+          </group>
+        );
+      })}
+
+      {/* The Architect's high-back chair */}
+      <group position={[0, 0, CZ - 0.5]}>
+        <mesh position={[0, 0.53, 0]}>
+          <boxGeometry args={[0.84, 0.1, 0.74]} />
+          <meshStandardMaterial color="#ebebeb" roughness={0.55} />
+        </mesh>
+        <mesh position={[0, 1.55, -0.35]}>
+          <boxGeometry args={[0.84, 2.1, 0.1]} />
+          <meshStandardMaterial color="#ebebeb" roughness={0.55} />
+        </mesh>
+        {[-0.47, 0.47].map((s, i) => (
+          <mesh key={i} position={[s, 0.82, -0.06]}>
+            <boxGeometry args={[0.07, 0.07, 0.65]} />
+            <meshStandardMaterial color="#e6e6e6" roughness={0.5} />
+          </mesh>
+        ))}
+        {[[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].map(([lx, lz], i) => (
+          <mesh key={i} position={[lx, 0.25, lz]}>
+            <cylinderGeometry args={[0.025, 0.025, 0.5, 6]} />
+            <meshStandardMaterial color="#d0d0d0" metalness={0.85} roughness={0.15} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+// ── Room 6: ZION MAINFRAME (locked-3) ────────────────────────────────────────
 function ZionRoom({ isNearTerminal, isNearExit }) {
   // Blinking server indicators
   const indicatorRefs = useRef([]);
@@ -1040,11 +1182,12 @@ function RoomProximity({ playerPosRef, onNearTerminal, onNearExit, onExitReached
 
 // ── Room map ──────────────────────────────────────────────────────────────────
 const ROOM_MAP = {
-  about:     OceanRoom,
-  resume:    CityStreetRoom,
-  portfolio: MountainRoom,
-  contact:   OracleRoom,
+  about:      OceanRoom,
+  resume:     CityStreetRoom,
+  portfolio:  MountainRoom,
+  contact:    OracleRoom,
   'locked-3': ZionRoom,
+  architect:  ArchitectRoom,
 };
 
 export default function MatrixRoom({ roomId, playerPosRef, isNearTerminal, isNearExit, onNearTerminal, onNearExit, onExitReached }) {

@@ -1335,7 +1335,9 @@ function ArchitectDialogue({ onExit }) {
   return (
     <div className="mx-architect" style={{ pointerEvents: 'none' }}>
       <div className="mx-architect__inner"
-        onClick={handleTap} onTouchEnd={handleTap}
+        onClick={handleTap}
+        onTouchStart={e => e.stopPropagation()}
+        onTouchEnd={handleTap}
         style={{ pointerEvents: 'all', cursor: 'pointer' }}>
         <div className="mx-architect__header">
           <span className="mx-architect__avatar">▣</span> THE ARCHITECT
@@ -1712,6 +1714,7 @@ export default function MatrixGame({ resumeData }) {
   const [kickFlash, setKickFlash] = useState(false);
   const [blockFlash, setBlockFlash] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [hitShake, setHitShake] = useState(false);
   const [lockedAttempt, setLockedAttempt] = useState(false);
   const [nearAgent, setNearAgent] = useState(false);
   const [bulletWarn, setBulletWarn] = useState(null);
@@ -2292,7 +2295,9 @@ export default function MatrixGame({ resumeData }) {
     neoHpRef.current = Math.max(0, neoHpRef.current - dmg);
     setNeoHp(neoHpRef.current);
     setHit(true);
-    setTimeout(() => setHit(false), 280);
+    setHitShake(true);
+    setTimeout(() => setHit(false), 300);
+    setTimeout(() => setHitShake(false), 320);
     if (neoHpRef.current <= 0) setDead(true);
   }, [dead, agentRegistryRef]);
 
@@ -2474,7 +2479,7 @@ export default function MatrixGame({ resumeData }) {
   );
 
   return (
-    <div className="mx-root">
+    <div className={`mx-root${hitShake ? ' mx-shake' : ''}`}>
       {/* Portrait-mode warning — CSS hides on landscape */}
       <div className="mx-portrait-warn">
         <div className="mx-portrait-warn__icon">📱</div>
@@ -2683,6 +2688,8 @@ export default function MatrixGame({ resumeData }) {
           onBulletTime={handleMobileBulletTime}
           onInteract={handleMobileInteract}
           blockRef={blockRef}
+          onBlockStart={() => setBlocking(true)}
+          onBlockEnd={() => setBlocking(false)}
           canInteract={canInteract}
           isFlying={isFlying}
           isArchitect={sceneId === 'room-architect'}

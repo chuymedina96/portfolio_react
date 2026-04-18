@@ -7,30 +7,46 @@ const JOYSTICK_R     = 56;      // max knob travel in px
 const LEFT_ZONE_FRAC = 0.44;    // left portion of screen = joystick zone
 const SPRINT_THRESH  = 0.80;    // joystick magnitude above this = sprint
 
+const BTN_BASE = {
+  background: 'rgba(0,0,0,0.80)',
+  borderRadius: 10,
+  fontSize: 11,
+  fontFamily: '"Share Tech Mono", monospace',
+  fontWeight: 'bold',
+  cursor: 'pointer',
+  touchAction: 'none',
+  WebkitUserSelect: 'none',
+  userSelect: 'none',
+  letterSpacing: '0.02em',
+  WebkitTapHighlightColor: 'transparent',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
+  padding: '0 4px',
+};
+
 // ── Hold button — sets a ref true while finger is held, false on release ────────
-function HoldBtn({ color, w, h, flyRef, children, style = {} }) {
+function HoldBtn({ color, w, h, flyRef, onStart, onEnd, children, style = {} }) {
+  const [active, setActive] = useState(false);
+  const activate   = () => { if (flyRef) flyRef.current = true;  onStart?.(); setActive(true);  };
+  const deactivate = () => { if (flyRef) flyRef.current = false; onEnd?.();   setActive(false); };
   return (
     <button
-      onTouchStart={e => { e.stopPropagation(); e.preventDefault(); if (flyRef) flyRef.current = true; }}
-      onTouchEnd={e => { e.stopPropagation(); if (flyRef) flyRef.current = false; }}
-      onTouchCancel={e => { e.stopPropagation(); if (flyRef) flyRef.current = false; }}
+      onTouchStart={e => { e.stopPropagation(); e.preventDefault(); activate(); }}
+      onTouchEnd={e => { e.stopPropagation(); deactivate(); }}
+      onTouchCancel={e => { e.stopPropagation(); deactivate(); }}
       style={{
+        ...BTN_BASE,
         width: w, height: h,
-        background: 'rgba(0,0,0,0.75)',
         border: `2px solid ${color}`,
         color,
-        borderRadius: 10,
-        fontSize: 12,
-        fontFamily: '"Share Tech Mono", monospace',
-        fontWeight: 'bold',
         textShadow: `0 0 8px ${color}`,
-        boxShadow: `0 0 10px ${color}44`,
-        cursor: 'pointer',
-        touchAction: 'none',
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
-        letterSpacing: '0.04em',
-        WebkitTapHighlightColor: 'transparent',
+        background:  active ? `rgba(255,255,255,0.18)` : 'rgba(0,0,0,0.80)',
+        boxShadow:   active ? `0 0 22px ${color}, inset 0 0 14px ${color}55` : `0 0 10px ${color}44`,
+        transform:   active ? 'scale(0.93)' : 'scale(1)',
+        transition:  'transform 0.06s, box-shadow 0.06s, background 0.06s',
         ...style,
       }}
     >
@@ -41,26 +57,22 @@ function HoldBtn({ color, w, h, flyRef, children, style = {} }) {
 
 // ── Button ────────────────────────────────────────────────────────────────────
 function Btn({ color, w, h, onPress, children, style = {} }) {
+  const [pressed, setPressed] = useState(false);
   return (
     <button
-      onTouchStart={e => { e.stopPropagation(); e.preventDefault(); onPress?.(); }}
+      onTouchStart={e => { e.stopPropagation(); e.preventDefault(); setPressed(true); onPress?.(); }}
+      onTouchEnd={() => setPressed(false)}
+      onTouchCancel={() => setPressed(false)}
       style={{
+        ...BTN_BASE,
         width: w, height: h,
-        background: 'rgba(0,0,0,0.75)',
         border: `2px solid ${color}`,
         color,
-        borderRadius: 10,
-        fontSize: 12,
-        fontFamily: '"Share Tech Mono", monospace',
-        fontWeight: 'bold',
         textShadow: `0 0 8px ${color}`,
-        boxShadow: `0 0 10px ${color}44`,
-        cursor: 'pointer',
-        touchAction: 'none',
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
-        letterSpacing: '0.04em',
-        WebkitTapHighlightColor: 'transparent',
+        background: pressed ? `rgba(255,255,255,0.18)` : 'rgba(0,0,0,0.80)',
+        boxShadow:  pressed ? `0 0 22px ${color}, inset 0 0 14px ${color}55` : `0 0 10px ${color}44`,
+        transform:  pressed ? 'scale(0.93)' : 'scale(1)',
+        transition: 'transform 0.06s, box-shadow 0.06s, background 0.06s',
         ...style,
       }}
     >
@@ -88,6 +100,8 @@ export default function MobileControls({
   onBulletTime,
   onInteract,
   blockRef,
+  onBlockStart,
+  onBlockEnd,
   canInteract,
   isFlying,
   isArchitect,
@@ -113,7 +127,8 @@ export default function MobileControls({
     for (const t of e.changedTouches) {
       const isLeft = t.clientX < window.innerWidth * LEFT_ZONE_FRAC;
 
-      if (isLeft && !joyTouchRef.current) {
+      // In architect room, left-side joystick is blocked (dialogue mode — no movement)
+      if (isLeft && !joyTouchRef.current && !isArchitect) {
         joyTouchRef.current = { id: t.identifier, baseX: t.clientX, baseY: t.clientY };
         mobileJoystickRef.current = { x: 0, y: 0 };
 
@@ -135,7 +150,7 @@ export default function MobileControls({
         lookTouchRef.current = { id: t.identifier, lastX: t.clientX, lastY: t.clientY };
       }
     }
-  }, [paused, mobileJoystickRef, ringR]);
+  }, [paused, isArchitect, mobileJoystickRef, ringR]);
 
   // ── Touch move ───────────────────────────────────────────────────────────────
   const handleTouchMove = useCallback((e) => {
@@ -306,23 +321,23 @@ export default function MobileControls({
         ) : (
           /* ── Normal combat buttons ───────────────────────────────────────── */
           <>
-            <div style={{ display: 'flex', gap: 7 }}>
-              <Btn color="#ffaa00" w={52} h={42} onPress={onDodgeLeft}>◀ DODGE</Btn>
-              <Btn color="#ffaa00" w={52} h={42} onPress={onDodgeRight}>DODGE ▶</Btn>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <Btn color="#ffaa00" w={62} h={42} onPress={onDodgeLeft}>◄ DODGE</Btn>
+              <Btn color="#ffaa00" w={62} h={42} onPress={onDodgeRight}>DODGE ►</Btn>
               <Btn color="#aa88ff" w={46} h={42} onPress={onBulletTime}>BT</Btn>
             </div>
-            <div style={{ display: 'flex', gap: 7 }}>
-              <Btn color="#00bbff" w={52} h={48} onPress={onPunch}>PUNCH</Btn>
-              <Btn color="#00bbff" w={52} h={48} onPress={onKick}>KICK</Btn>
-              <Btn color="#00bbff" w={52} h={48} onPress={onSpinKick}>SPIN</Btn>
-              <Btn color="#ffcc44" w={52} h={48} onPress={onUppercut}>UPPER</Btn>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <Btn color="#00bbff" w={55} h={48} onPress={onPunch}>PUNCH</Btn>
+              <Btn color="#00bbff" w={48} h={48} onPress={onKick}>KICK</Btn>
+              <Btn color="#00bbff" w={48} h={48} onPress={onSpinKick}>SPIN</Btn>
+              <Btn color="#ffcc44" w={55} h={48} onPress={onUppercut}>UPPER</Btn>
             </div>
-            <div style={{ display: 'flex', gap: 7 }}>
+            <div style={{ display: 'flex', gap: 6 }}>
               <Btn color="#00ff41" w={62} h={64} onPress={() => { mobileJumpRef.current = true; }}>JUMP</Btn>
-              <HoldBtn color="#00ffcc" w={62} h={64} flyRef={blockRef}
-                style={{ fontSize: 12, letterSpacing: '0.04em' }}>BLOCK</HoldBtn>
+              <HoldBtn color="#00ffcc" w={66} h={64} flyRef={blockRef}
+                onStart={onBlockStart} onEnd={onBlockEnd}>BLOCK</HoldBtn>
               <Btn color="#ff3300" w={74} h={64} onPress={onShoot}
-                style={{ fontSize: 16, letterSpacing: '0.08em' }}>FIRE</Btn>
+                style={{ fontSize: 16 }}>FIRE</Btn>
             </div>
           </>
         )}

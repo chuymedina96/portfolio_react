@@ -6,6 +6,16 @@
 @keyframes kickText   { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1.4) } 60% { opacity: 1; transform: translate(-50%, -50%) scale(1) } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.85) } }
 @keyframes tutFadeIn  { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes scanline   { 0% { transform: translateY(-100%) } 100% { transform: translateY(100vh) } }
+@keyframes mxHitVig   { 0% { opacity: 1 } 35% { opacity: 0.85 } 100% { opacity: 0 } }
+@keyframes mxShake    {
+  0%   { transform: translate(0,0) }
+  18%  { transform: translate(-5px, -3px) }
+  34%  { transform: translate(5px,  4px) }
+  50%  { transform: translate(-4px, 2px) }
+  66%  { transform: translate(3px, -2px) }
+  82%  { transform: translate(-2px, 1px) }
+  100% { transform: translate(0, 0) }
+}
 
 /* ── Root ──────────────────────────────────────────────────────────────────── */
 .mx-root {
@@ -70,10 +80,19 @@
 
 /* ── Flash overlays ────────────────────────────────────────────────────────── */
 .mx-caught    { z-index: 500; background: rgba(0, 255, 65, 0.09); animation: mxFlash 0.12s ease-in-out 5 alternate; }
-.mx-hit       { z-index: 502; background: rgba(255, 50, 0, 0.32); animation: mxFlash 0.1s ease-in-out 3 alternate; }
+.mx-hit {
+  z-index: 502;
+  background: radial-gradient(ellipse at center, transparent 25%, rgba(220, 20, 0, 0.50) 100%);
+  box-shadow: inset 0 0 80px rgba(255, 0, 0, 0.45);
+  border: 3px solid rgba(255, 30, 0, 0.55);
+  animation: mxHitVig 0.32s ease-out forwards;
+}
 .mx-punch-hit { z-index: 501; background: rgba(255, 200, 0, 0.18); animation: mxFlash 0.08s ease-in-out 2 alternate; }
 .mx-dodge-flash { z-index: 499; background: rgba(0, 220, 255, 0.10); animation: mxFlash 0.16s ease-out 3 alternate; }
 .mx-block-flash { z-index: 503; background: rgba(0, 255, 200, 0.22); animation: mxFlash 0.10s ease-out 3 alternate; }
+
+/* ── Screen shake ──────────────────────────────────────────────────────────── */
+.mx-shake { animation: mxShake 0.28s ease-out; }
 .mx-blocking-hud {
   position: fixed;
   bottom: 88px; left: 50%; transform: translateX(-50%);

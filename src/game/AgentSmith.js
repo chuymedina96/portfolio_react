@@ -19,7 +19,9 @@ const _dir = new THREE.Vector3();
 const _pv  = new THREE.Vector3();
 
 // ── Animated body ─────────────────────────────────────────────────────────────
-function AgentBody({ moving = true, hitFlashRef, deadRef, deathTRef }) {
+const PUNCH_DUR = 0.42; // seconds for one punch swing
+
+function AgentBody({ movingRef, hitFlashRef, deadRef, deathTRef, punchRef }) {
   const lLeg = useRef(), rLeg = useRef();
   const lArm = useRef(), rArm = useRef();
   const bodyRef = useRef();
@@ -33,20 +35,39 @@ function AgentBody({ moving = true, hitFlashRef, deadRef, deathTRef }) {
       deathTRef.current = Math.min(1, deathTRef.current + delta / DEATH_DUR);
       bodyRef.current.rotation.x = deathTRef.current * Math.PI * 0.42;
       bodyRef.current.position.y = -deathTRef.current * 0.8;
-      // fade
       matsRef.current.forEach(m => {
         if (m) { m.transparent = true; m.opacity = Math.max(0, 1 - deathTRef.current * 1.4); }
       });
       return;
     }
 
-    // Walk animation
+    // Read live moving state from ref so walk animation always plays correctly
+    const moving = movingRef?.current ?? false;
     const t = clock.elapsedTime * (moving ? 5.5 : 1.5);
     const a = moving ? 0.58 : 0.08;
-    if (lLeg.current) lLeg.current.rotation.x  =  Math.sin(t) * a;
-    if (rLeg.current) rLeg.current.rotation.x  = -Math.sin(t) * a;
-    if (lArm.current) lArm.current.rotation.x  = -Math.sin(t) * a * 0.65;
-    if (rArm.current) rArm.current.rotation.x  =  Math.sin(t) * a * 0.65;
+    if (lLeg.current) lLeg.current.rotation.x =  Math.sin(t) * a;
+    if (rLeg.current) rLeg.current.rotation.x = -Math.sin(t) * a;
+    if (lArm.current) lArm.current.rotation.x = -Math.sin(t) * a * 0.65;
+
+    // Punch animation — right arm swings forward then retracts
+    if (punchRef?.current > 0) {
+      const prog = 1 - punchRef.current / PUNCH_DUR; // 0→1 over punch duration
+      // Sharp forward swing on first half, slower retract on second half
+      const phase = prog < 0.45
+        ? (prog / 0.45)               // 0→1 forward swing
+        : 1 - ((prog - 0.45) / 0.55); // 1→0 retract
+      if (rArm.current) {
+        rArm.current.rotation.x = -phase * 2.1;  // swing arm forward
+        rArm.current.rotation.z =  phase * 0.15; // slight inward angle
+      }
+      if (bodyRef.current) bodyRef.current.position.z = phase * 0.12; // lean into punch
+    } else {
+      if (rArm.current) {
+        rArm.current.rotation.x =  Math.sin(t) * a * 0.65;
+        rArm.current.rotation.z = 0;
+      }
+      if (bodyRef.current) bodyRef.current.position.z = 0;
+    }
 
     // Hit flash
     if (hitFlashRef.current > 0) {
@@ -223,6 +244,7 @@ export default function AgentSmith({
   const deathTRef    = useRef(0);
   const doneRef      = useRef(false);
   const knockbackRef = useRef({ vel: new THREE.Vector3(), t: 0 });
+  const punchRef     = useRef(0); // countdown timer for punch animation
 
   // Register with parent so player can punch this agent
   useEffect(() => {
@@ -320,10 +342,14 @@ export default function AgentSmith({
     g.position.copy(pos);
     g.rotation.y = Math.atan2(dx, dz);
 
+    // Punch animation timer
+    if (punchRef.current > 0) punchRef.current -= dt;
+
     // Melee punch — lands when close enough and cooldown elapsed
     meleeTimer.current -= dt;
     if (dist2D < MELEE_RANGE && meleeTimer.current <= 0) {
       meleeTimer.current = MELEE_CD * (0.85 + Math.random() * 0.3);
+      punchRef.current = PUNCH_DUR; // trigger punch animation
       onMeleePunch?.(MELEE_DMG);
     }
 
@@ -351,10 +377,11 @@ export default function AgentSmith({
   return (
     <group ref={groupRef}>
       <AgentBody
-        moving={movingRef.current}
+        movingRef={movingRef}
         hitFlashRef={hitFlashRef}
         deadRef={deadRef}
         deathTRef={deathTRef}
+        punchRef={punchRef}
       />
       <AgentHealthBar hpRef={hpRef} deadRef={deadRef} />
     </group>

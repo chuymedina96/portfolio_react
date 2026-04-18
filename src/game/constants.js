@@ -147,7 +147,7 @@ export const MATRIX_DOORS = [
   },
 ];
 
-export const MATRIX_DOOR_DIST = 12;
+export const MATRIX_DOOR_DIST = 6;
 
 // Red pill collectible — between contact and root access doors
 export const KEY_POSITION = new THREE.Vector3(0, 0.35, -148);
