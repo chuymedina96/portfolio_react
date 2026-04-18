@@ -938,7 +938,7 @@ function ReturnPortal({ position, label = 'RETURN TO HALLWAY', color = '#00ccff'
 // ── Scene (inside Canvas) ─────────────────────────────────────────────────────
 function Scene({
   charPosRef, yawRef, pitchRef, dodgeRef, crouchRef, timeScaleRef, stateRef,
-  agentRegistryRef, flyingRef,
+  agentRegistryRef, flyingRef, blockRef,
   onNearDoor, nearDoor, onCatch, onShoot, paused, sceneId,
   isNearTerminal, isNearExit, onNearTerminal, onNearExit, onExitRoom,
   agentKey, onAgentSpawn, onAgentDead, onAgentMelee,
@@ -1331,35 +1331,43 @@ function ArchitectDialogue({ onExit }) {
   const typed    = line.text.slice(0, charIdx);
   const doneLine = charIdx >= line.text.length;
   const isLast   = lineIdx === ARCHITECT_LINES.length - 1;
-  const history  = ARCHITECT_LINES.slice(Math.max(0, lineIdx - 3), lineIdx);
+  // Only show the immediately preceding line as faded history (Pokémon shows 1 prior line)
+  const prevLine = lineIdx > 0 ? ARCHITECT_LINES[lineIdx - 1] : null;
 
   return (
-    <div className="mx-architect" style={{ pointerEvents: 'none' }}>
+    <div className="mx-architect">
       <div className="mx-architect__inner"
         onClick={handleTap}
         onTouchStart={e => e.stopPropagation()}
-        onTouchEnd={handleTap}
-        style={{ pointerEvents: 'all', cursor: 'pointer' }}>
-        <div className="mx-architect__header">
-          <span className="mx-architect__avatar">▣</span> THE ARCHITECT
+        onTouchEnd={handleTap}>
+
+        {/* Portrait — left side */}
+        <div className="mx-architect__portrait">
+          <span className="mx-architect__portrait-icon">▣</span>
+          <span className="mx-architect__portrait-label">ARCH</span>
         </div>
-        <div className="mx-architect__speech">
-          {history.map((l, i) => (
-            <div key={i} className="mx-architect__line mx-architect__line--history">{l.text}</div>
-          ))}
-          <div className={`mx-architect__line mx-architect__line--active${line.isExit ? ' mx-architect__line--exit' : ''}`}>
-            {typed}
-            {!doneLine && <span className="mx-architect__cursor">_</span>}
+
+        {/* Dialogue body — right side */}
+        <div className="mx-architect__body">
+          <div className="mx-architect__name">The Architect</div>
+          <div className="mx-architect__speech">
+            {prevLine && (
+              <div className="mx-architect__line mx-architect__line--history">{prevLine.text}</div>
+            )}
+            <div className={`mx-architect__line mx-architect__line--active${line.isExit ? ' mx-architect__line--exit' : ''}`}>
+              {typed}
+              {!doneLine && <span className="mx-architect__cursor">_</span>}
+            </div>
+            {doneLine && !isLast && <span className="mx-architect__continue">▼</span>}
+          </div>
+          <div className="mx-architect__footer">
+            {isLast && doneLine
+              ? <span className="mx-architect__hint mx-architect__hint--exit">[ TAP / E ] EXIT  ·  [ ESC ] EXIT</span>
+              : <span className="mx-architect__hint">[ TAP / E ] CONTINUE  ·  [ ESC ] SKIP ALL</span>
+            }
           </div>
         </div>
-        <div className="mx-architect__footer">
-          {isLast && doneLine
-            ? <span className="mx-architect__hint mx-architect__hint--exit">[ TAP / E ] EXIT  ·  [ ESC ] EXIT</span>
-            : doneLine
-            ? <span className="mx-architect__hint">[ TAP / E ] CONTINUE  ·  [ ESC ] SKIP</span>
-            : <span className="mx-architect__hint">[ TAP / E ] SKIP LINE  ·  [ ESC ] SKIP ALL</span>
-          }
-        </div>
+
       </div>
     </div>
   );
@@ -2520,6 +2528,7 @@ export default function MatrixGame({ resumeData }) {
           stateRef={stateRef}
           agentRegistryRef={agentRegistryRef}
           flyingRef={flyingRef}
+          blockRef={blockRef}
           onNearDoor={d => setNearDoor(d)}
           nearDoor={nearDoor}
           openDoor={openDoor}

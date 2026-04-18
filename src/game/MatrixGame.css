@@ -412,88 +412,129 @@
 }
 
 /* ── Architect dialogue ────────────────────────────────────────────────────── */
+/* ── Architect dialogue — Pokémon-style bottom bar ──────────────────────────── */
 .mx-architect {
   position: fixed;
-  inset: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 1200;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0 clamp(12px, 4vw, 40px) clamp(24px, 4vh, 48px);
-  background: linear-gradient(to top, rgba(0,0,0,.68) 0%, rgba(0,0,0,.15) 55%, transparent 100%);
   pointer-events: none;
 }
 .mx-architect__inner {
-  width: min(720px, 94vw);
-  background: rgba(4, 3, 1, 0.93);
-  border: 1px solid rgba(255,200,68,.32);
-  border-radius: 8px;
-  padding: clamp(14px, 2.5vw, 24px) clamp(16px, 3vw, 32px);
-  box-shadow: 0 -6px 50px rgba(255,160,40,.12);
-  animation: architectIn .35s ease;
-  pointer-events: all;
-}
-@keyframes architectIn { from { opacity: 0; transform: scale(.97) } to { opacity: 1; transform: scale(1) } }
-.mx-architect__header {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(.55rem, 1.2vw, .68rem);
-  letter-spacing: .32em;
-  color: #ffcc44;
-  text-shadow: 0 0 14px #ffaa0099;
-  margin-bottom: 18px;
-  text-transform: uppercase;
+  width: 100%;
+  background: rgba(3, 2, 0, 0.97);
+  border-top: 3px solid rgba(255, 200, 68, 0.60);
+  padding: 14px clamp(16px, 4vw, 40px) 16px;
+  box-shadow: 0 -6px 48px rgba(255, 150, 30, 0.18);
   display: flex;
-  align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid rgba(255,200,68,.12);
-  padding-bottom: 12px;
+  gap: clamp(12px, 2.5vw, 24px);
+  align-items: flex-start;
+  animation: architectIn .22s ease;
+  pointer-events: all;
+  cursor: pointer;
 }
-.mx-architect__avatar {
-  font-size: 1.1rem;
-  opacity: .7;
+@keyframes architectIn { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
+
+/* Portrait box — left side */
+.mx-architect__portrait {
+  flex-shrink: 0;
+  width: clamp(48px, 7vw, 68px);
+  height: clamp(48px, 7vw, 68px);
+  border: 2px solid rgba(255, 200, 68, 0.45);
+  border-radius: 4px;
+  background: rgba(255, 180, 40, 0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.mx-architect__portrait-icon {
+  font-size: clamp(1.2rem, 2.8vw, 1.7rem);
+  color: rgba(255, 200, 68, 0.85);
+  text-shadow: 0 0 14px #ffaa00bb;
+  line-height: 1;
+}
+.mx-architect__portrait-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.42rem;
+  letter-spacing: 0.18em;
+  color: rgba(255, 200, 68, 0.55);
+  text-transform: uppercase;
+}
+
+/* Text body — right side */
+.mx-architect__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.mx-architect__name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.54rem, 1.1vw, 0.64rem);
+  letter-spacing: 0.28em;
+  color: #ffcc44;
+  text-shadow: 0 0 10px #ffaa0077;
+  text-transform: uppercase;
+  margin-bottom: 7px;
 }
 .mx-architect__speech {
-  min-height: 90px;
+  position: relative;
+  min-height: 3.2em;
 }
 .mx-architect__line {
   font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(.78rem, 1.8vw, 1rem);
-  line-height: 1.7;
-  padding: 2px 0;
+  font-size: clamp(0.8rem, 1.8vw, 0.98rem);
+  line-height: 1.65;
 }
 .mx-architect__line--history {
-  color: rgba(220,190,120,.3);
+  color: rgba(220, 190, 120, 0.28);
 }
 .mx-architect__line--active {
-  color: rgba(255,225,150,.95);
-  text-shadow: 0 0 12px rgba(255,180,50,.35);
+  color: rgba(255, 230, 160, 0.96);
+  text-shadow: 0 0 10px rgba(255, 180, 50, 0.28);
 }
 .mx-architect__line--exit {
   color: #ffcc44;
-  letter-spacing: .08em;
-  text-shadow: 0 0 16px #ffaa0099;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 14px #ffaa0099;
   animation: btPulse 1.2s ease-in-out infinite alternate;
 }
 .mx-architect__cursor {
   display: inline-block;
-  animation: mxBlink .7s step-end infinite;
+  animation: mxBlink .65s step-end infinite;
   color: #ffcc44;
   margin-left: 2px;
 }
 @keyframes mxBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Continue arrow — bottom-right corner of speech area */
+.mx-architect__continue {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 0.72rem;
+  color: #ffcc44;
+  text-shadow: 0 0 10px #ffaa00;
+  animation: archBounce 0.7s ease-in-out infinite alternate;
+}
+@keyframes archBounce { from { transform: translateY(0) } to { transform: translateY(4px) } }
+
+/* Keyboard hint — very subtle, below the speech */
 .mx-architect__footer {
-  margin-top: 18px;
-  border-top: 1px solid rgba(255,200,68,.1);
-  padding-top: 10px;
+  margin-top: 5px;
 }
 .mx-architect__hint {
   font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(.55rem, 1.1vw, .66rem);
-  letter-spacing: .16em;
-  color: rgba(255,200,68,.45);
+  font-size: clamp(0.48rem, 0.9vw, 0.56rem);
+  letter-spacing: 0.14em;
+  color: rgba(255, 200, 68, 0.30);
 }
 .mx-architect__hint--exit {
-  color: rgba(255,200,68,.75);
+  color: rgba(255, 200, 68, 0.55);
   animation: btPulse 1.4s ease-in-out infinite alternate;
 }
 
@@ -998,6 +1039,22 @@
 
   /* Reticle crosshair is keyboard/mouse aiming aid — not needed on touch */
   .mx-reticle { display: none; }
+
+  /* Architect dialogue: sits above the mobile button row (~160px tall) */
+  .mx-architect__inner {
+    padding: 11px 14px 12px;
+    gap: 10px;
+  }
+  .mx-architect__portrait {
+    width: 44px;
+    height: 44px;
+  }
+  .mx-architect__line {
+    font-size: 0.82rem;
+  }
+  .mx-architect__speech {
+    min-height: 2.6em;
+  }
 
   /* Health bar: move to top-right below the ammo display */
   .mx-health {
