@@ -260,7 +260,7 @@ export default function AgentSmith({
       if (deathTRef.current >= 1 && !doneRef.current) {
         doneRef.current = true;
         g.visible = false;
-        onDead?.();
+        onDead?.(posRef.current.clone());
       }
       return;
     }

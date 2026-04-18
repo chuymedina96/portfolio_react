@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { STATIONS } from './constants';
 
 // ── Panel content ──────────────────────────────────────────────────────────────
@@ -71,17 +71,23 @@ function PortfolioPanel({ data }) {
         {projects.map(p => (
           <div key={p.title} className="panel-project-card">
             <img src={`images/portfolio/${p.image}`} alt={p.title}
-              style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 4 }}
               onError={e => { e.target.style.display = 'none'; }}
             />
             <div className="panel-project-info">
               <div className="panel-project-title">{p.title}</div>
               <div className="panel-project-cat">{p.category}</div>
-              {p.url && (
-                <a href={p.url} target="_blank" rel="noopener noreferrer" className="panel-btn" style={{ marginTop: 10, display: 'inline-flex' }}>
-                  Launch →
-                </a>
-              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                {p.url && (
+                  <a href={p.url} target="_blank" rel="noopener noreferrer" className="panel-btn" style={{ display: 'inline-flex' }}>
+                    Launch →
+                  </a>
+                )}
+                {p.github && (
+                  <a href={p.github} target="_blank" rel="noopener noreferrer" className="panel-btn panel-btn--ghost" style={{ display: 'inline-flex' }}>
+                    ⌥ GitHub
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -126,6 +132,47 @@ function ContactPanel({ data }) {
 }
 
 // ── Main HUD ───────────────────────────────────────────────────────────────────
+// ── DockedPanel — handles "opens and instantly closes" on mobile ───────────────
+function DockedPanel({ dockedStation, stationColor, onUndock, content }) {
+  // Ignore any close-gesture that arrives within 350ms of opening (same touch that opened it)
+  const readyRef = useRef(false);
+  useEffect(() => {
+    readyRef.current = false;
+    const t = setTimeout(() => { readyRef.current = true; }, 350);
+    return () => clearTimeout(t);
+  }, [dockedStation]);
+
+  const handleOverlayClick = (e) => {
+    if (!readyRef.current) return;
+    if (e.target === e.currentTarget) onUndock();
+  };
+
+  return (
+    <div className="hud-overlay" onClick={handleOverlayClick}>
+      <div className="hud-panel" style={{ '--c': stationColor }}>
+        <div className="hud-panel-header">
+          <div>
+            <div className="hud-panel-label">{dockedStation.sublabel}</div>
+            <h2 className="hud-panel-title">{dockedStation.label}</h2>
+          </div>
+          <button className="hud-close-btn" onClick={onUndock} aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div className="hud-panel-content">
+          {content}
+        </div>
+        {/* Mobile close footer — large touch target, easy to reach */}
+        <div className="hud-panel-close-footer">
+          <button className="hud-panel-close-mobile" onClick={onUndock}>
+            ✕ CLOSE
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HUD({ nearStation, dockedStation, onUndock, resumeData, mode = 'space', stations = STATIONS }) {
   const PANEL_MAP = {
     about:     <AboutPanel     data={resumeData?.main}      />,
@@ -149,19 +196,21 @@ export default function HUD({ nearStation, dockedStation, onUndock, resumeData, 
             <>
               <div className="hud-ctrl-section">MOVE</div>
               <div className="hud-ctrl-row"><kbd>W A S D</kbd><span>Move</span></div>
-              <div className="hud-ctrl-row"><kbd>Mouse</kbd><span>Look / Aim</span></div>
+              <div className="hud-ctrl-row"><kbd>Mouse</kbd><span>Look / Aim camera</span></div>
               <div className="hud-ctrl-row"><kbd>Shift</kbd><span>Sprint</span></div>
-              <div className="hud-ctrl-row"><kbd>Space</kbd><span>Jump / Wall Jump</span></div>
+              <div className="hud-ctrl-row"><kbd>Space</kbd><span>Jump</span></div>
+              <div className="hud-ctrl-row"><kbd>Ctrl / C</kbd><span>Crouch / duck</span></div>
+              <div className="hud-ctrl-row"><kbd>Q / R</kbd><span>Dodge left / right</span></div>
               <div className="hud-ctrl-section" style={{ marginTop: 8 }}>COMBAT</div>
-              <div className="hud-ctrl-row"><kbd>J</kbd><span>Punch / Combo</span></div>
-              <div className="hud-ctrl-row"><kbd>K</kbd><span>Roundhouse Kick</span></div>
-              <div className="hud-ctrl-row"><kbd>Q</kbd><span>Dodge Left</span></div>
-              <div className="hud-ctrl-row"><kbd>R</kbd><span>Dodge Right</span></div>
-              <div className="hud-ctrl-row"><kbd>Ctrl / C</kbd><span>Duck (avoid bullets)</span></div>
+              <div className="hud-ctrl-row"><kbd>Click</kbd><span>Shoot</span></div>
+              <div className="hud-ctrl-row"><kbd>G</kbd><span>Reload</span></div>
+              <div className="hud-ctrl-row"><kbd>J</kbd><span>Punch / combo</span></div>
+              <div className="hud-ctrl-row"><kbd>K</kbd><span>Roundhouse kick</span></div>
+              <div className="hud-ctrl-row"><kbd>L</kbd><span>Spinning hook kick</span></div>
               <div className="hud-ctrl-row"><kbd>Z / F</kbd><span>Bullet Time</span></div>
               <div className="hud-ctrl-section" style={{ marginTop: 8 }}>WORLD</div>
-              <div className="hud-ctrl-row"><kbd>E</kbd><span>Enter / Access</span></div>
-              <div className="hud-ctrl-row"><kbd>Esc / E</kbd><span>Close Panel</span></div>
+              <div className="hud-ctrl-row"><kbd>E</kbd><span>Enter door / terminal</span></div>
+              <div className="hud-ctrl-row"><kbd>Esc / E</kbd><span>Close panel</span></div>
             </>
           ) : (
             <>
@@ -200,22 +249,12 @@ export default function HUD({ nearStation, dockedStation, onUndock, resumeData, 
 
       {/* ── Docked panel ── */}
       {dockedStation && (
-        <div className="hud-overlay" onClick={e => { if (e.target === e.currentTarget) onUndock(); }}>
-          <div className="hud-panel" style={{ '--c': stationColor }}>
-            <div className="hud-panel-header">
-              <div>
-                <div className="hud-panel-label">{dockedStation.sublabel}</div>
-                <h2 className="hud-panel-title">{dockedStation.label}</h2>
-              </div>
-              <button className="hud-close-btn" onClick={onUndock} aria-label="Undock">
-                ✕
-              </button>
-            </div>
-            <div className="hud-panel-content">
-              {PANEL_MAP[dockedStation.id]}
-            </div>
-          </div>
-        </div>
+        <DockedPanel
+          dockedStation={dockedStation}
+          stationColor={stationColor}
+          onUndock={onUndock}
+          content={PANEL_MAP[dockedStation.id]}
+        />
       )}
 
       {/* ── Crosshair ── */}

@@ -69,6 +69,7 @@ export default function MobileControls({
 
   // ── Touch start ──────────────────────────────────────────────────────────────
   const handleTouchStart = useCallback((e) => {
+    if (paused) return;  // modal is open — don't hijack any touches
     if (e.target.tagName === 'BUTTON') return;
 
     for (const t of e.changedTouches) {
@@ -96,11 +97,18 @@ export default function MobileControls({
         lookTouchRef.current = { id: t.identifier, lastX: t.clientX, lastY: t.clientY };
       }
     }
-  }, [mobileJoystickRef, ringR]);
+  }, [paused, mobileJoystickRef, ringR]);
 
   // ── Touch move ───────────────────────────────────────────────────────────────
   const handleTouchMove = useCallback((e) => {
-    e.preventDefault();
+    if (paused) return;
+    // Only block native scroll when joystick or camera look is active.
+    // If neither is tracking this touch, let it scroll the modal naturally.
+    const isTracked = [...e.changedTouches].some(t =>
+      joyTouchRef.current?.id === t.identifier ||
+      lookTouchRef.current?.id === t.identifier
+    );
+    if (isTracked) e.preventDefault();
     for (const t of e.changedTouches) {
 
       // Joystick — update via direct DOM, zero React re-renders
@@ -137,10 +145,11 @@ export default function MobileControls({
         lt.lastY = t.clientY;
       }
     }
-  }, [yawRef, pitchRef, mobileJoystickRef, mobileSprintRef]);
+  }, [paused, yawRef, pitchRef, mobileJoystickRef, mobileSprintRef]);
 
   // ── Touch end ────────────────────────────────────────────────────────────────
   const handleTouchEnd = useCallback((e) => {
+    if (paused) return;
     for (const t of e.changedTouches) {
       if (joyTouchRef.current?.id === t.identifier) {
         joyTouchRef.current = null;
@@ -152,7 +161,7 @@ export default function MobileControls({
         lookTouchRef.current = null;
       }
     }
-  }, [mobileJoystickRef, mobileSprintRef]);
+  }, [paused, mobileJoystickRef, mobileSprintRef]);
 
   useEffect(() => {
     const opts = { passive: false };

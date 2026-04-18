@@ -171,7 +171,7 @@ function NeoBody({ stateRef }) {
 
     // Body lean: dodge = sideways, crouch = lean back (Matrix bullet-dodge)
     if (tilt.current) {
-      const tz = s.dodging   ? s.dodgeDir * 0.72 : 0;
+      const tz = s.dodging   ? s.dodgeDir * 0.38 : 0;
       const tx = s.flying    ? 0.28
                : s.crouching ? 0.65
                : s.kicking   ? -0.22
@@ -618,17 +618,24 @@ export default function PlayerCharacter({
       groupRef.current.rotation.y = yaw + Math.PI;
     }
 
-    // ── TPS Camera ─────────────────────────────────────────────────────────────
+    // ── TPS Camera — right-shoulder over-the-shoulder aiming ───────────────────
     _camOff.set(0, 0, CAM_DIST);
     _camOff.applyAxisAngle(_Y, yaw);
     const pitchAdj = pitch * 1.6;
+
+    // Right-shoulder offset: camera shifts right so Neo's body is left of center.
+    // Crosshair stays at screen center → aim is to the right of Neo, agents visible.
+    const shoulderX =  Math.cos(yaw) * 0.65;
+    const shoulderZ = -Math.sin(yaw) * 0.65;
+
+    const camYMin = bounds.yMin != null ? bounds.yMin + 0.3 : 0.3;
+    const camYMax = bounds.yMax != null ? bounds.yMax - 0.5 : 150;
+
     state.camera.position.set(
-      THREE.MathUtils.clamp(pos.x + _camOff.x, bounds.xMin + 0.3, bounds.xMax - 0.3),
-      pos.y + CAM_H + pitchAdj * 0.4,
-      pos.z + _camOff.z
+      THREE.MathUtils.clamp(pos.x + _camOff.x + shoulderX, bounds.xMin + 0.5, bounds.xMax - 0.5),
+      THREE.MathUtils.clamp(pos.y + CAM_H + pitchAdj * 0.4, camYMin, camYMax),
+      THREE.MathUtils.clamp(pos.z + _camOff.z + shoulderZ, bounds.zMin + 0.5, bounds.zMax - 0.5)
     );
-    // Look in the aim direction (not at Neo's body) so screen-center matches where bullets go
-    // Note: positive pitch = mouse up = looking up, so forward-y uses +sin(pitch)
     const aimX = -Math.sin(yaw) * Math.cos(pitch);
     const aimY =  Math.sin(pitch);
     const aimZ = -Math.cos(yaw) * Math.cos(pitch);

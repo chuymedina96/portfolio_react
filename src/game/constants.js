@@ -135,6 +135,16 @@ export const MATRIX_DOORS = [
     locked:       true,
     isRootAccess: true,
   },
+  {
+    id:          'architect',
+    position:    new THREE.Vector3(0, 2.9, -258),
+    label:       '> THE ARCHITECT',
+    sublabel:    'End of Line',
+    color:       '#ffcc44',
+    side:        'center',
+    locked:      false,
+    isArchitect: true,
+  },
 ];
 
 export const MATRIX_DOOR_DIST = 18;

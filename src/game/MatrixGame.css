@@ -287,21 +287,85 @@
 
 .mx-flying__title {
   position: absolute;
-  top: 24px; left: 50%;
+  top: 22px; left: 50%;
   transform: translateX(-50%);
   font-family: 'Share Tech Mono', monospace;
   font-size: clamp(0.78rem, 1.8vw, 0.95rem);
   letter-spacing: 0.26em;
-  color: #6688ff;
-  text-shadow: 0 0 20px #4466ff, 0 0 40px #2244cc;
+  color: #88aaff;
+  text-shadow: 0 0 18px #4466ff, 0 0 38px #2244cc88;
   white-space: nowrap;
-  animation: btPulse 1.2s ease-in-out infinite alternate;
+  animation: btPulse 1.4s ease-in-out infinite alternate;
 }
 
+/* Edge vignette — dark corners, clean center for flight */
 .mx-flying__vignette {
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, transparent 35%, rgba(30, 40, 160, 0.12) 100%);
-  box-shadow: inset 0 0 100px rgba(40, 60, 200, 0.15);
+  background:
+    radial-gradient(ellipse at center, transparent 38%, rgba(5, 10, 40, 0.55) 100%);
+  box-shadow:
+    inset 0 0 80px rgba(20, 40, 180, 0.18),
+    inset 0 0 200px rgba(5, 10, 30, 0.35);
+  pointer-events: none;
+}
+
+/* Altitude + speed readout */
+.mx-flying__stats {
+  position: absolute;
+  top: 58px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 28px;
+}
+
+.mx-flying__stat {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.7rem, 1.6vw, 0.85rem);
+  letter-spacing: 0.18em;
+  color: #aac4ff;
+  text-shadow: 0 0 12px #4488ff88;
+  white-space: nowrap;
+}
+
+/* Animated speed lines — horizontal streaks at screen edges */
+@keyframes flyStreakL {
+  0%   { opacity: 0; transform: translateX(0); }
+  20%  { opacity: 0.6; }
+  100% { opacity: 0; transform: translateX(32vw); }
+}
+@keyframes flyStreakR {
+  0%   { opacity: 0; transform: translateX(0); }
+  20%  { opacity: 0.6; }
+  100% { opacity: 0; transform: translateX(-32vw); }
+}
+
+.mx-flying__speedlines {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.mx-flying__speedlines::before,
+.mx-flying__speedlines::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 30vw;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 14px,
+    rgba(140, 180, 255, 0.07) 14px,
+    rgba(140, 180, 255, 0.07) 16px
+  );
+}
+.mx-flying__speedlines::before {
+  left: 0;
+  animation: flyStreakL 0.9s linear infinite;
+}
+.mx-flying__speedlines::after {
+  right: 0;
+  animation: flyStreakR 0.9s linear infinite;
+  animation-delay: 0.45s;
 }
 
 .mx-flying__hint {
@@ -309,10 +373,71 @@
   bottom: 42px; left: 50%;
   transform: translateX(-50%);
   font-family: 'Share Tech Mono', monospace;
-  font-size: clamp(0.65rem, 1.4vw, 0.78rem);
-  color: rgba(120, 140, 255, 0.65);
+  font-size: clamp(0.62rem, 1.3vw, 0.76rem);
+  color: rgba(140, 160, 255, 0.55);
   letter-spacing: 0.12em;
   white-space: nowrap;
+}
+
+/* ── Architect dialogue ────────────────────────────────────────────────────── */
+.mx-architect {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 18;
+  padding: 0 clamp(16px, 5vw, 80px) 28px;
+  pointer-events: none;
+}
+.mx-architect__inner {
+  max-width: 860px;
+  margin: 0 auto;
+  background: linear-gradient(to top, rgba(5,4,2,.96) 0%, rgba(5,4,2,.82) 100%);
+  border: 1px solid rgba(255,200,68,.22);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  padding: 18px 28px 16px;
+  box-shadow: 0 -8px 40px rgba(255,180,50,.08);
+}
+.mx-architect__header {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .58rem;
+  letter-spacing: .3em;
+  color: #ffcc44;
+  text-shadow: 0 0 12px #ffaa0088;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.mx-architect__line {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(.72rem, 1.6vw, .88rem);
+  line-height: 1.65;
+  padding: 2px 0;
+}
+.mx-architect__line--history {
+  color: rgba(220,190,120,.35);
+}
+.mx-architect__line--active {
+  color: rgba(255,220,140,.92);
+  text-shadow: 0 0 10px rgba(255,180,50,.3);
+}
+.mx-architect__line--exit {
+  color: #ffcc44;
+  letter-spacing: .12em;
+  text-shadow: 0 0 14px #ffaa0099;
+  animation: btPulse 1.2s ease-in-out infinite alternate;
+}
+.mx-architect__cursor {
+  display: inline-block;
+  animation: mxBlink .7s step-end infinite;
+  color: #ffcc44;
+  margin-left: 1px;
+}
+@keyframes mxBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+.mx-architect__hint {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .6rem;
+  letter-spacing: .14em;
+  color: rgba(255,200,68,.4);
+  margin-top: 8px;
 }
 
 /* ── Access denied overlay ─────────────────────────────────────────────────── */
@@ -516,6 +641,41 @@
   letter-spacing: 0.14em;
   text-shadow: 0 0 10px #ff2200;
   pointer-events: none;
+}
+
+/* ── Ammo display ────────────────────────────────────────────────────────────── */
+.mx-ammo {
+  position: fixed;
+  bottom: 52px; right: 22px;
+  z-index: 15;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  pointer-events: none;
+}
+.mx-ammo__clip {
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 12px currentColor;
+  transition: color 0.2s;
+  min-width: 2.4ch;
+  text-align: right;
+}
+.mx-ammo__sep {
+  font-size: 1rem;
+  color: rgba(0,255,65,0.3);
+}
+.mx-ammo__reserve {
+  font-size: 1rem;
+  color: rgba(0,255,65,0.55);
+  letter-spacing: 0.06em;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  .mx-ammo { bottom: 220px; right: 14px; }
+  .mx-ammo__clip { font-size: 1.5rem; }
 }
 
 /* ── Corridor door list HUD ─────────────────────────────────────────────────── */
@@ -727,4 +887,38 @@
 .mx-tutorial__start:hover {
   background: rgba(0, 255, 65, 0.07);
   box-shadow: 0 0 30px rgba(0, 255, 65, 0.18);
+}
+
+/* ── Mobile / touch adjustments ─────────────────────────────────────────────── */
+@media (pointer: coarse), (max-width: 768px) {
+  /* Door list spans full width at 8 items — too wide on phone; hide it.
+     Each door already shows its label on the 3D door face itself. */
+  .mx-door-list { display: none; }
+
+  /* Reticle crosshair is keyboard/mouse aiming aid — not needed on touch */
+  .mx-reticle { display: none; }
+
+  /* Health bar: move from bottom-left (joystick zone) to top-left, below system map */
+  .mx-health {
+    bottom: auto;
+    top: 80px;
+    left: 8px;
+  }
+  .mx-health__track { width: 130px; }
+
+  /* Key / red pill indicator: move away from fire button zone */
+  .mx-key-indicator {
+    bottom: auto;
+    top: 116px;
+    right: unset;
+    left: 8px;
+    font-size: 0.68rem;
+  }
+
+  /* Ammo display: already at bottom: 220px right; keep but verify it clears buttons.
+     Action button rows max out at ~194px from bottom, so 220px is safe. */
+
+  /* Door / terminal prompts: center them higher so they clear the INTERACT button */
+  .mx-door-prompt   { bottom: 200px; }
+  .mx-terminal-prompt { bottom: 200px; }
 }

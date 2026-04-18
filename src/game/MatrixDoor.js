@@ -43,7 +43,7 @@ export default function MatrixDoor({ position, color, label, sublabel, side, isA
   });
 
   const pos  = [position.x, position.y, position.z];
-  const rotY = side === 'left' ? Math.PI / 2 : -Math.PI / 2;
+  const rotY = side === 'left' ? Math.PI / 2 : side === 'center' ? 0 : -Math.PI / 2;
   const c    = locked ? LOCK_RED : color;
 
   return (

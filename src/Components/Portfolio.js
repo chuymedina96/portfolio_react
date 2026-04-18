@@ -29,16 +29,28 @@ const Portfolio = ({ data }) => {
                   <div className="project-category">Web App</div>
                   <div className="project-title">{p.title}</div>
                   <div className="project-desc">{p.category}</div>
-                  {p.url && (
-                    <a
-                      href={p.url}
-                      className="project-link"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Launch Mission
-                    </a>
-                  )}
+                  <div className="project-links">
+                    {p.url && (
+                      <a
+                        href={p.url}
+                        className="project-link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        ↗ Live Site
+                      </a>
+                    )}
+                    {p.github && (
+                      <a
+                        href={p.github}
+                        className="project-link project-link--github"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        ⌥ GitHub
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

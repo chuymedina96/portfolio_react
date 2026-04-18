@@ -259,9 +259,37 @@
 }
 .hud-close-btn:hover { background: rgba(255,80,80,.2); color: #fff; }
 
+/* Mobile close footer — hidden on desktop */
+.hud-panel-close-footer { display: none; }
+.hud-panel-close-mobile {
+  width: 100%;
+  padding: 16px;
+  background: rgba(255,255,255,.04);
+  border: none;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.6);
+  font-family: 'Orbitron', sans-serif;
+  font-size: .78rem;
+  letter-spacing: .2em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  /* Show the footer close button on touch devices */
+  .hud-panel-close-footer { display: block; flex-shrink: 0; }
+  /* Make the header ✕ bigger on touch */
+  .hud-close-btn { width: 48px; height: 48px; font-size: 1.2rem; }
+  /* Push panel up a bit more to leave room for game UI at bottom */
+  .hud-panel { max-height: 82vh; }
+}
+
 .hud-panel-content {
   overflow-y: auto;
   flex: 1;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 .hud-panel-content::-webkit-scrollbar { width: 4px; }
 .hud-panel-content::-webkit-scrollbar-track { background: transparent; }
@@ -270,24 +298,24 @@
 /* ── Panel body styles ────────────────────────────────────────── */
 .panel-body {
   padding: 24px 28px 28px;
-  color: rgba(200,220,255,.8);
+  color: rgba(200,220,255,.88);
   font-family: 'Exo 2', system-ui, sans-serif;
-  font-size: .93rem;
-  line-height: 1.7;
+  font-size: 1.1rem;
+  line-height: 1.8;
 }
 .panel-scroll { max-height: 100%; }
 .panel-h2 {
   font-family: 'Orbitron', sans-serif;
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #fff;
   margin: 0 0 6px;
 }
 .panel-badge {
   font-family: 'Share Tech Mono', monospace;
-  font-size: .68rem;
+  font-size: .9rem;
   color: #00ff9d;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 .panel-profile-row {
   display: flex;
@@ -297,8 +325,8 @@
 }
 @media (max-width: 600px) { .panel-profile-row { flex-direction: column; } }
 .panel-avatar {
-  width: 90px;
-  height: 90px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(0,212,255,.4);
@@ -318,12 +346,12 @@
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 .panel-info-label {
   font-family: 'Share Tech Mono', monospace;
-  font-size: .6rem;
-  letter-spacing: .15em;
+  font-size: .8rem;
+  letter-spacing: .12em;
   color: rgba(0,212,255,.7);
   text-transform: uppercase;
 }
@@ -331,10 +359,10 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 22px;
+  padding: 12px 24px;
   font-family: 'Orbitron', sans-serif;
-  font-size: .62rem;
-  letter-spacing: .18em;
+  font-size: .75rem;
+  letter-spacing: .16em;
   text-transform: uppercase;
   color: var(--c, #00d4ff);
   border: 1px solid var(--c, #00d4ff);
@@ -348,20 +376,28 @@
   background: var(--c, #00d4ff);
   color: #020209;
 }
+.panel-btn--ghost {
+  color: rgba(200,220,255,.6);
+  border-color: rgba(200,220,255,.22);
+}
+.panel-btn--ghost:hover {
+  background: rgba(200,220,255,.1);
+  color: rgba(200,220,255,.95);
+}
 
 /* Resume panel */
 .panel-section-head {
   font-family: 'Orbitron', sans-serif;
-  font-size: .7rem;
-  letter-spacing: .18em;
-  color: rgba(155,95,255,.85);
+  font-size: .92rem;
+  letter-spacing: .16em;
+  color: rgba(155,95,255,.9);
   text-transform: uppercase;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(155,95,255,.15);
+  border-bottom: 1px solid rgba(155,95,255,.18);
 }
 .panel-timeline-item {
-  padding: 0 0 20px 20px;
+  padding: 0 0 22px 22px;
   border-left: 1px solid rgba(0,212,255,.15);
   position: relative;
   margin-bottom: 6px;
@@ -379,65 +415,71 @@
 }
 .panel-tl-company {
   font-family: 'Orbitron', sans-serif;
-  font-size: .82rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: #fff;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 .panel-tl-role {
   font-family: 'Share Tech Mono', monospace;
-  font-size: .72rem;
-  color: rgba(0,212,255,.85);
-  margin-bottom: 6px;
+  font-size: .92rem;
+  color: rgba(0,212,255,.9);
+  margin-bottom: 8px;
 }
 .panel-tl-desc {
-  font-size: .85rem;
-  color: rgba(200,220,255,.65);
-  line-height: 1.65;
+  font-size: 1rem;
+  color: rgba(200,220,255,.75);
+  line-height: 1.75;
 }
 .panel-skills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 .panel-skill-chip {
   font-family: 'Share Tech Mono', monospace;
-  font-size: .7rem;
-  padding: 5px 12px;
-  border: 1px solid rgba(155,95,255,.3);
+  font-size: .86rem;
+  padding: 7px 16px;
+  border: 1px solid rgba(155,95,255,.35);
   border-radius: 20px;
-  color: rgba(155,95,255,.9);
-  background: rgba(155,95,255,.06);
+  color: rgba(155,95,255,.95);
+  background: rgba(155,95,255,.07);
 }
 
 /* Portfolio panel */
 .panel-projects {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 .panel-project-card {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
   background: rgba(0,255,157,.03);
   border: 1px solid rgba(0,255,157,.1);
   border-radius: 8px;
   overflow: hidden;
 }
-@media (max-width: 560px) { .panel-project-card { grid-template-columns: 1fr; } }
-.panel-project-info { padding: 16px; }
+.panel-project-card img {
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+  border-bottom: 1px solid rgba(0,255,157,.08);
+}
+.panel-project-info { padding: 20px 22px; }
 .panel-project-title {
   font-family: 'Orbitron', sans-serif;
-  font-size: .9rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: #fff;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 .panel-project-cat {
-  font-size: .82rem;
-  color: rgba(200,220,255,.6);
-  line-height: 1.6;
+  font-size: 1rem;
+  color: rgba(200,220,255,.72);
+  line-height: 1.7;
 }
 
 /* Contact panel inputs */
@@ -448,10 +490,23 @@
   border-radius: 4px;
   color: rgba(200,220,255,.9);
   font-family: 'Share Tech Mono', monospace;
-  font-size: .85rem;
-  padding: 11px 14px;
+  font-size: .95rem;
+  padding: 13px 16px;
   outline: none;
   transition: border-color .2s;
+}
+
+/* Mobile: boost panel text another notch since pinch-zoom is disabled */
+@media (pointer: coarse), (max-width: 768px) {
+  .panel-body        { font-size: 1.15rem; }
+  .panel-tl-company  { font-size: 1.1rem; }
+  .panel-tl-role     { font-size: .98rem; }
+  .panel-tl-desc     { font-size: 1.05rem; }
+  .panel-project-title { font-size: 1.15rem; }
+  .panel-project-cat { font-size: 1.05rem; }
+  .panel-skill-chip  { font-size: .92rem; }
+  .panel-btn         { font-size: .82rem; padding: 13px 26px; }
+  .panel-input       { font-size: 1rem; }
 }
 .panel-input::placeholder { color: rgba(200,220,255,.25); }
 .panel-input:focus { border-color: rgba(0,212,255,.5); }
@@ -509,3 +564,24 @@
 .matrix-hud .panel-timeline-item::before { background: #00ff41; box-shadow: 0 0 8px #00ff41; }
 .matrix-hud .panel-badge      { color: #00ff41; }
 .matrix-hud .panel-avatar     { border-color: rgba(0,255,65,.45); }
+
+/* ================================================================
+   MOBILE / TOUCH — hide desktop-only HUD elements so they don't
+   block the on-screen joystick and action buttons
+================================================================ */
+@media (pointer: coarse), (max-width: 768px) {
+  /* Keyboard controls legend lives at bottom-left — same zone as joystick */
+  .hud-controls { display: none !important; }
+
+  /* System map: shrink and pin to top-left so it doesn't eat right-button space */
+  .hud-starmap {
+    top: 8px;
+    right: unset;
+    left: 8px;
+    padding: 8px 12px;
+    min-width: unset;
+    max-width: 46vw;
+  }
+  .hud-starmap-title { margin-bottom: 6px; }
+  .hud-starmap-node  { margin-bottom: 5px; font-size: .6rem; }
+}

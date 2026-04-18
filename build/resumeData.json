@@ -1,10 +1,10 @@
 {
   "main": {
     "name": "Chuy",
-    "occupation": "Fullstack Software Engineer with several years of professional DevOps Engineering experience",
-    "description": "I'm also a practitioner of client advocacy with experience maintaining modern, containerized applications for Fortune 500 companies. I've also shipped and open-sourced multiple applications for the civic betterment of Chicago.",
+    "occupation": "Fullstack Software Engineer · DevOps Engineer · Founder",
+    "description": "I build software that ships — from containerized microservices for federal agencies to consumer apps running on 3D printers I own. I founded EngineerChi, a social-impact studio in Chicago, and built a full-stack learning platform to bring free coding education to people from low-income communities.",
     "image": "me-pic.jpeg",
-    "bio": "I’m a software engineer who creates well-organized and well-written code mainly in Python and Javascript. I have experience working for a top digital product development agency in Chicago where I picked up many of the latest DevOps practices + tools, and performed containerizations of applications using Docker for Fortune 500 clients, such as Tyson and Pfizer. I'm experienced with MVC software architecture with direct practical experience in utilizing Django or Node for mainly building RESTful APIs, React for building UIs, and Postgres for RDMS. I’ve also graduated Valedictorian from a Coding Dojo Bootcamp where I learned new technologies and improved my engineering skills.",
+    "bio": "I started as an intern in 2017 pulling Docker containers together for Fortune 500 clients. A few years later I was running Kubernetes clusters that serve millions of federal student loan applications. I’ve always just figured it out and kept moving. These days I run EngineerChi, my own software studio where I take on real clients and build things that actually matter to people. I also built a full-stack learning platform from scratch — cohort management, student tracking, curriculum delivery, the whole thing — to support a coding program I’m standing up for people from low-income communities. The program name is still in the works, but the platform is real and running. On the side I design and 3D print custom cat caps out of my own shop, built the STL analyzer that runs my print service, and yes — this portfolio is a Matrix game I built from scratch. Chicago born and raised. I build things I’m proud of.",
     "contactmessage": "Get in touch with me if you want to talk!",
     "email": "chuymedina96@gmail.com",
     "phone": "733-951-1650",
@@ -13,7 +13,7 @@
       "state": "IL"
     },
     "website": "",
-    "resumedownload": "./Jesus_Medina_Resume.pdf",
+    "resumedownload": "./Chuy's Résumé.pdf",
     "social": [
       {
         "name": "linkedin",
@@ -125,10 +125,32 @@
   "portfolio": {
     "projects": [
       {
-        "title": "Django Search Engine",
-        "category": "Search Engine where citizens can search for any Chicago Police Officer and leave ratings on interactions",
+        "title": "Chicago 3D Printworks",
+        "category": "Precision 3D printing service built for engineers. I designed and built a custom STL file analyzer that parses uploaded 3D model geometry to automatically calculate print time, material usage, and instant pricing — eliminating the manual quoting process entirely. Engineers get a real quote in seconds.",
+        "image": "chicago3dprintworks.png",
+        "url": "https://www.chicago3dprintworks.com/",
+        "github": "https://github.com/chuymedina96/chicago-3d-printworks"
+      },
+      {
+        "title": "EngineerChi",
+        "category": "Social-impact software development studio I founded and run with real clients. We build custom software, design systems, and digital infrastructure for mission-driven businesses and organizations. I also built a full-stack learning platform from scratch — cohort management, student tracking, curriculum delivery — to support a coding program I'm launching for people from low-income communities.",
+        "image": "engineerchi.png",
+        "url": "https://www.engineerchi.org/",
+        "github": ""
+      },
+      {
+        "title": "3D Catcap Lab",
+        "category": "I designed, manufactured, and ship every cat cap myself — printed in-house on my own 3D printers. Built the full e-commerce platform in React with Stripe.js for payments and a custom cap configurator so customers can design their own before ordering. From code to physical product, end to end.",
+        "image": "3dcatcaplab.png",
+        "url": "https://www.3dcatcaps.com/",
+        "github": "https://github.com/chuymedina96/3dcatcaps-frontend"
+      },
+      {
+        "title": "SearchCPD",
+        "category": "Civic transparency app built in Django. Chicago residents can search any CPD officer by name or badge number and leave public ratings on their interactions — putting accountability data in the hands of the community.",
         "image": "searchcpd.png",
-        "url": "https://www.searchcpd.com/"
+        "url": "https://www.searchcpd.com/",
+        "github": "https://github.com/chuymedina96/search_cpd_open"
       }
     ]
   },

@@ -675,6 +675,55 @@ header#home {
   line-height: 1.7;
 }
 
+/* Grouped / promoted timeline entries */
+.timeline-item--grouped::before {
+  background: var(--neon-purple, #9b5fff);
+  box-shadow: 0 0 8px rgba(155,95,255,.7);
+}
+.timeline-tenure {
+  display: inline-block;
+  margin-left: 10px;
+  font-family: var(--font-mono);
+  font-size: .6rem;
+  color: var(--text-dim);
+  opacity: .7;
+  font-weight: 400;
+  letter-spacing: .08em;
+}
+.timeline-roles {
+  border-left: 1px solid rgba(155,95,255,.3);
+  margin-left: 2px;
+  padding-left: 14px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.timeline-role-block { position: relative; }
+.timeline-role-block::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(155,95,255,.6);
+  border: 1px solid rgba(155,95,255,.9);
+}
+.timeline-badge {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 7px;
+  font-size: .56rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #9b5fff;
+  border: 1px solid rgba(155,95,255,.45);
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
 /* Skills */
 .skills-list { display: flex; flex-direction: column; gap: 20px; }
 
@@ -808,28 +857,47 @@ header#home {
   opacity: 1;
   transform: translateY(0);
 }
+.project-links {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  transform: translateY(8px);
+  opacity: 0;
+  transition: opacity .3s .15s, transform .3s .15s;
+}
+.project-card:hover .project-links {
+  opacity: 1;
+  transform: translateY(0);
+}
 .project-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-family: var(--font-head);
   font-size: .6rem;
   letter-spacing: .18em;
   color: var(--neon-cyan);
   text-transform: uppercase;
-  transform: translateY(8px);
-  opacity: 0;
-  transition: opacity .3s .15s, transform .3s .15s;
+  text-decoration: none;
+  padding: 5px 10px;
+  border: 1px solid rgba(0,212,255,.35);
+  border-radius: 4px;
+  transition: color .2s, border-color .2s, background .2s;
 }
-.project-card:hover .project-link {
-  opacity: 1;
-  transform: translateY(0);
+.project-link:hover {
+  color: #fff;
+  border-color: var(--neon-cyan);
+  background: rgba(0,212,255,.12);
 }
-.project-link::after {
-  content: '→';
-  transition: transform .2s;
+.project-link--github {
+  color: rgba(200,200,255,.75);
+  border-color: rgba(160,160,255,.28);
 }
-.project-link:hover::after { transform: translateX(4px); }
+.project-link--github:hover {
+  color: #fff;
+  border-color: rgba(160,160,255,.8);
+  background: rgba(120,120,255,.12);
+}
 
 /* Scanline overlay on cards */
 .project-card::after {

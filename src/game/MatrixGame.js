@@ -17,20 +17,22 @@ import { MATRIX_DOORS, ROOM, KEY_POSITION } from './constants';
 import './MatrixGame.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const DODGE_SPD   = 11;   // tight sidestep — short burst, not full-room slide
-const DODGE_DUR   = 0.32; // short window for a crisp matrix dodge
+const DODGE_SPD   = 9;    // smooth glide — velocity decays naturally to zero
+const DODGE_DUR   = 0.65; // long enough for exponential decay to trail off, no snap-stop
 const BT_DURATION = 5.0;
 const BT_COOLDOWN = 8;
 const BT_SCALE    = 0.12;
 const PUNCH_RANGE = 2.6;
 const PUNCH_DMG   = 34;    // 3 punches to kill
 
-const COR_BOUNDS  = { xMin: -4.3, xMax: 4.3, zMin: -295, zMax: 1 };
+const COR_BOUNDS  = { xMin: -4.3, xMax: 4.3, zMin: -295, zMax: 1,  yMin: 0,  yMax: 7.5 };
 const ROOM_BOUNDS = {
   xMin: -ROOM.halfW + 0.4,
   xMax:  ROOM.halfW - 0.4,
   zMin:  ROOM.exitZ - 2,
   zMax:  5,
+  yMin:  0,
+  yMax:  11.0,
 };
 
 // ── Red-pill key collectible ──────────────────────────────────────────────────
@@ -435,6 +437,402 @@ function CityRoom({ charPosRef }) {
   );
 }
 
+// ── Corridor architect beacon — golden glow visible from far away ─────────────
+function ArchitectBeacon() {
+  const beamRef  = useRef();
+  const haloRef  = useRef();
+  const floorRef = useRef();
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    const p = 0.5 + 0.5 * Math.sin(t * 0.9);
+    if (beamRef.current)  beamRef.current.opacity        = 0.08 + p * 0.07;
+    if (haloRef.current)  haloRef.current.emissiveIntensity = 1.8 + p * 1.4;
+    if (floorRef.current) floorRef.current.opacity       = 0.18 + p * 0.1;
+  });
+  return (
+    <group position={[0, 0, -258]}>
+      {/* Vertical god-ray column */}
+      <mesh position={[0, 20, 0]}>
+        <cylinderGeometry args={[0.6, 2.2, 42, 10, 1, true]} />
+        <meshStandardMaterial ref={beamRef} color="#ffcc44" emissive="#ffaa00"
+          emissiveIntensity={1} transparent opacity={0.1} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Floating gold orb above door */}
+      <mesh position={[0, 9.5, 0]}>
+        <sphereGeometry args={[0.55, 14, 10]} />
+        <meshStandardMaterial ref={haloRef} color="#fff8e0" emissive="#ffcc44"
+          emissiveIntensity={2.2} />
+      </mesh>
+      {/* Floor halo disc */}
+      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0.05, 0]}>
+        <circleGeometry args={[4.5, 32]} />
+        <meshStandardMaterial ref={floorRef} color="#ffcc44" emissive="#ffaa00"
+          emissiveIntensity={0.6} transparent opacity={0.22} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+// ── Architect room components ─────────────────────────────────────────────────
+function ArchitectScreen({ x, y, z, rotY = 0, w = 3.6, h = 2.2, seed = 0 }) {
+  const matRef  = useRef();
+  const scanRef = useRef();
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (matRef.current)  matRef.current.emissiveIntensity  = 0.5 + Math.sin(t * 1.3 + seed) * 0.22;
+    if (scanRef.current) scanRef.current.emissiveIntensity = 0.3 + Math.sin(t * 2.1 + seed * 0.7) * 0.15;
+  });
+  return (
+    <group position={[x, y, z]} rotation={[0, rotY, 0]}>
+      <mesh>
+        <boxGeometry args={[w + 0.2, h + 0.2, 0.1]} />
+        <meshStandardMaterial color="#12100a" metalness={0.7} roughness={0.35} />
+      </mesh>
+      {/* Gold trim lines */}
+      {[[-w/2, 0, [0.05, h+0.2, 0.12]], [w/2, 0, [0.05, h+0.2, 0.12]],
+        [0, h/2, [w+0.2, 0.05, 0.12]], [0, -h/2, [w+0.2, 0.05, 0.12]]].map(([px, py, dims], i) => (
+        <mesh key={i} position={[px, py, 0.01]}>
+          <boxGeometry args={dims} />
+          <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={1.4} metalness={0.9} />
+        </mesh>
+      ))}
+      {/* Screen */}
+      <mesh position={[0, 0, 0.06]}>
+        <planeGeometry args={[w, h]} />
+        <meshStandardMaterial ref={matRef} color="#000c00" emissive="#00ff41" emissiveIntensity={0.5} roughness={1} />
+      </mesh>
+      {/* Horizontal scan line */}
+      <mesh position={[0, 0, 0.065]}>
+        <planeGeometry args={[w * 0.92, 0.06]} />
+        <meshStandardMaterial ref={scanRef} color="#00ff41" emissive="#00ff41"
+          emissiveIntensity={0.3} transparent opacity={0.55} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function ArchitectTVWall() {
+  // 5 columns × 3 rows of small monitors covering the back wall — movie accurate
+  const screens = useMemo(() => {
+    const result = [];
+    for (let col = -2; col <= 2; col++) {
+      for (let row = 0; row < 3; row++) {
+        result.push({ x: col * 3.3, y: 1.8 + row * 3.0, z: -57.6, seed: col * 3 + row });
+      }
+    }
+    return result;
+  }, []);
+  return (
+    <>
+      {screens.map((s, i) => (
+        <ArchitectScreen key={i} x={s.x} y={s.y} z={s.z} w={2.9} h={2.4} seed={s.seed} />
+      ))}
+    </>
+  );
+}
+
+function ArchitectFigure() {
+  const auraRef  = useRef();
+  const lightRef = useRef();
+  useFrame(({ clock }) => {
+    const p = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 0.7);
+    if (auraRef.current)  auraRef.current.opacity   = 0.05 + p * 0.06;
+    if (lightRef.current) lightRef.current.intensity = 10 + p * 6;
+  });
+  return (
+    <group position={[0, 0.3, -44]}>
+      {/* Raised dais */}
+      <mesh position={[0, -0.15, 0]}>
+        <cylinderGeometry args={[1.4, 1.6, 0.3, 16]} />
+        <meshStandardMaterial color="#1a1408" emissive="#ffaa44" emissiveIntensity={0.5}
+          metalness={0.7} roughness={0.3} />
+      </mesh>
+      {/* Outer aura */}
+      <mesh>
+        <sphereGeometry args={[3.5, 16, 12]} />
+        <meshStandardMaterial ref={auraRef} color="#ffcc44" emissive="#ffaa00"
+          emissiveIntensity={0.5} transparent opacity={0.05} depthWrite={false} />
+      </mesh>
+      {/* Torso — cream suit */}
+      <mesh position={[0, 1.1, 0]}>
+        <boxGeometry args={[0.78, 1.6, 0.4]} />
+        <meshStandardMaterial color="#ece4cc" emissive="#ffcc88" emissiveIntensity={0.4}
+          roughness={0.55} metalness={0.08} />
+      </mesh>
+      {/* Tie */}
+      <mesh position={[0, 1.05, 0.21]}>
+        <boxGeometry args={[0.1, 1.1, 0.02]} />
+        <meshStandardMaterial color="#c8a830" emissive="#ffaa00" emissiveIntensity={1.2} />
+      </mesh>
+      {/* Lapels */}
+      {[-1, 1].map((s, i) => (
+        <mesh key={i} position={[s * 0.16, 1.25, 0.2]} rotation={[0, 0, s * 0.25]}>
+          <boxGeometry args={[0.2, 0.85, 0.03]} />
+          <meshStandardMaterial color="#d8d0b8" emissive="#ffcc88" emissiveIntensity={0.2} />
+        </mesh>
+      ))}
+      {/* Shoulders / arms */}
+      {[-1, 1].map((s, i) => (
+        <mesh key={i} position={[s * 0.55, 0.95, 0]}>
+          <boxGeometry args={[0.22, 1.1, 0.36]} />
+          <meshStandardMaterial color="#e0d8c0" emissive="#ffcc88" emissiveIntensity={0.3}
+            roughness={0.6} />
+        </mesh>
+      ))}
+      {/* Neck */}
+      <mesh position={[0, 2.0, 0]}>
+        <cylinderGeometry args={[0.11, 0.13, 0.36, 8]} />
+        <meshStandardMaterial color="#c8b890" emissive="#ffcc88" emissiveIntensity={0.25} />
+      </mesh>
+      {/* Head */}
+      <mesh position={[0, 2.28, 0]}>
+        <sphereGeometry args={[0.3, 14, 11]} />
+        <meshStandardMaterial color="#c8b080" emissive="#ffcc88" emissiveIntensity={0.3}
+          roughness={0.75} />
+      </mesh>
+      {/* White hair */}
+      <mesh position={[0, 2.52, -0.05]}>
+        <sphereGeometry args={[0.28, 12, 9]} />
+        <meshStandardMaterial color="#f4f0e4" emissive="#fff8e8" emissiveIntensity={0.65} />
+      </mesh>
+      {/* Legs */}
+      {[-0.2, 0.2].map((lx, i) => (
+        <mesh key={i} position={[lx, -0.1, 0]}>
+          <boxGeometry args={[0.3, 1.0, 0.36]} />
+          <meshStandardMaterial color="#ddd4bc" emissive="#ffcc88" emissiveIntensity={0.18} />
+        </mesh>
+      ))}
+      {/* Shoes */}
+      {[-0.2, 0.2].map((lx, i) => (
+        <mesh key={i} position={[lx, -0.68, 0.08]}>
+          <boxGeometry args={[0.26, 0.18, 0.44]} />
+          <meshStandardMaterial color="#1e1806" emissive="#ffaa44" emissiveIntensity={0.35}
+            metalness={0.6} roughness={0.35} />
+        </mesh>
+      ))}
+      {/* Animated key light */}
+      <pointLight ref={lightRef} position={[0, 5, 1.5]} color="#ffcc88" intensity={12} distance={18} decay={2} />
+    </group>
+  );
+}
+
+function CodeParticles() {
+  const attrRef = useRef();
+  const COUNT   = 180;
+  const positions = useMemo(() => {
+    const arr = new Float32Array(COUNT * 3);
+    for (let i = 0; i < COUNT; i++) {
+      arr[i*3]   = (Math.random()-0.5) * 16;
+      arr[i*3+1] = Math.random() * 11;
+      arr[i*3+2] = -(Math.random() * 52 + 4);
+    }
+    return arr;
+  }, []);
+  useFrame((_, dt) => {
+    if (!attrRef.current) return;
+    const arr = attrRef.current.array;
+    for (let i = 0; i < COUNT; i++) {
+      arr[i*3+1] -= 0.025;
+      if (arr[i*3+1] < 0) arr[i*3+1] = 11 + Math.random();
+    }
+    attrRef.current.needsUpdate = true;
+  });
+  return (
+    <points>
+      <bufferGeometry>
+        <bufferAttribute ref={attrRef} attach="attributes-position" array={positions} count={COUNT} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial color="#ffcc44" size={0.07} transparent opacity={0.35} sizeAttenuation />
+    </points>
+  );
+}
+
+function ArchitectRoom({ charPosRef, onNearReturn }) {
+  const nearRef = useRef(false);
+
+  // Trigger "near return" when player walks back toward entrance (z > -6)
+  useFrame(() => {
+    if (!charPosRef?.current) return;
+    const near = charPosRef.current.z > -6;
+    if (near !== nearRef.current) {
+      nearRef.current = near;
+      onNearReturn?.(near);
+    }
+  });
+
+  return (
+    <>
+      <color attach="background" args={['#04030a']} />
+      <fog attach="fog" args={['#04030a', 45, 90]} />
+      <ambientLight color="#18140a" intensity={2.5} />
+      <directionalLight position={[0, 12, -25]} color="#ffcc88" intensity={3.0} />
+      <pointLight position={[0, 9,  -8]}  color="#ffaa44" intensity={9}  distance={28} decay={2} />
+      <pointLight position={[0, 9,  -28]} color="#ffaa44" intensity={7}  distance={30} decay={2} />
+      <pointLight position={[0, 9,  -48]} color="#ffcc88" intensity={12} distance={28} decay={2} />
+      <pointLight position={[-5, 3, -18]} color="#00ff41" intensity={3.5} distance={20} decay={2} />
+      <pointLight position={[ 5, 3, -18]} color="#00ff41" intensity={3.5} distance={20} decay={2} />
+      <pointLight position={[-5, 3, -38]} color="#00ff41" intensity={2.5} distance={20} decay={2} />
+      <pointLight position={[ 5, 3, -38]} color="#00ff41" intensity={2.5} distance={20} decay={2} />
+
+      {/* Floor — dark reflective marble */}
+      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0, -29]}>
+        <planeGeometry args={[18, 60]} />
+        <meshStandardMaterial color="#08060a" roughness={0.12} metalness={0.7} />
+      </mesh>
+      {/* Floor tile grid */}
+      <mesh rotation={[-Math.PI/2, 0, 0]} position={[0, 0.01, -29]}>
+        <planeGeometry args={[18, 60, 9, 30]} />
+        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={0.1}
+          transparent opacity={0.14} wireframe />
+      </mesh>
+
+      {/* Ceiling with center strip */}
+      <mesh rotation={[Math.PI/2, 0, 0]} position={[0, 12, -29]}>
+        <planeGeometry args={[18, 60]} />
+        <meshStandardMaterial color="#0e0c06" roughness={0.9} />
+      </mesh>
+      <mesh rotation={[Math.PI/2, 0, 0]} position={[0, 11.95, -29]}>
+        <planeGeometry args={[1.4, 60]} />
+        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={0.55}
+          transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+
+      {/* Side walls */}
+      {[-1, 1].map((s, i) => (
+        <mesh key={i} position={[s * 9, 6, -29]} rotation={[0, s * Math.PI/2, 0]}>
+          <planeGeometry args={[60, 12]} />
+          <meshStandardMaterial color="#0c0a06" roughness={0.88} />
+        </mesh>
+      ))}
+
+      {/* Back wall — dark, TV wall mounted on it */}
+      <mesh position={[0, 6, -58.1]}>
+        <planeGeometry args={[18, 12]} />
+        <meshStandardMaterial color="#100d08" roughness={0.85} />
+      </mesh>
+
+      {/* Entrance wall with doorway gap */}
+      {[-4.5, 4.5].map((x, i) => (
+        <mesh key={i} position={[x, 6, 4.8]}>
+          <boxGeometry args={[9, 12, 0.3]} />
+          <meshStandardMaterial color="#0e0c06" roughness={0.88} />
+        </mesh>
+      ))}
+      {/* Entrance lintel above doorway */}
+      <mesh position={[0, 10.5, 4.8]}>
+        <boxGeometry args={[18, 3, 0.3]} />
+        <meshStandardMaterial color="#0e0c06" roughness={0.88} />
+      </mesh>
+
+      {/* Entrance doorframe — gold */}
+      {[[-1.45, 4, 4.85], [1.45, 4, 4.85]].map(([px, py, pz], i) => (
+        <mesh key={i} position={[px, py, pz]}>
+          <boxGeometry args={[0.14, 8.2, 0.14]} />
+          <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2.5} metalness={0.9} />
+        </mesh>
+      ))}
+      <mesh position={[0, 8.1, 4.85]}>
+        <boxGeometry args={[3.1, 0.14, 0.14]} />
+        <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2.5} metalness={0.9} />
+      </mesh>
+
+      {/* Gold pillar columns — pairs down the length */}
+      {[-6.8, 6.8].map((px, si) =>
+        [-8, -20, -34, -48].map((pz, j) => (
+          <group key={`col-${si}-${j}`} position={[px, 0, pz]}>
+            <mesh position={[0, 5.5, 0]}>
+              <cylinderGeometry args={[0.2, 0.26, 11, 8]} />
+              <meshStandardMaterial color="#22180a" emissive="#ffaa44"
+                emissiveIntensity={0.65} metalness={0.88} roughness={0.18} />
+            </mesh>
+            {/* Column cap glow */}
+            <mesh position={[0, 11.1, 0]}>
+              <cylinderGeometry args={[0.38, 0.38, 0.18, 8]} />
+              <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={2} metalness={0.9} />
+            </mesh>
+          </group>
+        ))
+      )}
+
+      {/* Large side screens */}
+      {[[-8.85, 5.5, -14, Math.PI/2], [-8.85, 5.5, -32, Math.PI/2], [-8.85, 5.5, -50, Math.PI/2],
+        [ 8.85, 5.5, -14,-Math.PI/2], [ 8.85, 5.5, -32,-Math.PI/2], [ 8.85, 5.5, -50,-Math.PI/2]]
+        .map(([x,y,z,r], i) => <ArchitectScreen key={`S${i}`} x={x} y={y} z={z} rotY={r} w={4.2} h={2.8} seed={i} />)}
+
+      {/* TV wall at back — 5×3 grid of monitors */}
+      <ArchitectTVWall />
+
+      {/* Floating golden code dust */}
+      <CodeParticles />
+
+      <ArchitectFigure />
+
+      {/* Return portal — at entrance, slightly above floor */}
+      <ReturnPortal
+        position={[0, 2.2, 3.5]}
+        label="RETURN TO HALLWAY"
+        color="#ffcc44"
+      />
+    </>
+  );
+}
+
+// ── Return portal (flying + architect rooms) ──────────────────────────────────
+function ReturnPortal({ position, label = 'RETURN TO HALLWAY', color = '#00ccff',
+                        charPosRef, onNearReturn, triggerDist = 10 }) {
+  const ringA  = useRef();
+  const ringB  = useRef();
+  const glowRef = useRef();
+  const nearRef = useRef(false);
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (ringA.current)  ringA.current.rotation.z  =  t * 0.7;
+    if (ringB.current)  ringB.current.rotation.z  = -t * 0.45;
+    if (glowRef.current) glowRef.current.opacity   = 0.1 + Math.sin(t * 1.6) * 0.05;
+
+    if (charPosRef?.current && onNearReturn) {
+      const p    = charPosRef.current;
+      const [px, py, pz] = position;
+      const dist = Math.sqrt((p.x-px)**2 + (p.y-py)**2 + (p.z-pz)**2);
+      const near = dist < triggerDist;
+      if (near !== nearRef.current) {
+        nearRef.current = near;
+        onNearReturn(near);
+      }
+    }
+  });
+
+  return (
+    <group position={position}>
+      {/* Outer ring — spins CW */}
+      <mesh ref={ringA}>
+        <torusGeometry args={[1.7, 0.06, 8, 52]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={4.5} />
+      </mesh>
+      {/* Inner ring — spins CCW */}
+      <mesh ref={ringB}>
+        <torusGeometry args={[1.2, 0.04, 8, 42]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3.5} />
+      </mesh>
+      {/* Glow fill disc */}
+      <mesh>
+        <circleGeometry args={[1.65, 36]} />
+        <meshStandardMaterial ref={glowRef} color={color} emissive={color}
+          emissiveIntensity={1.0} transparent opacity={0.1} depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+      <pointLight color={color} intensity={10} distance={16} decay={2} />
+      <Billboard follow>
+        <Text position={[0, -2.3, 0]} fontSize={0.3} color={color}
+          anchorX="center" anchorY="middle"
+          outlineWidth={0.022} outlineColor="#000" letterSpacing={0.1}>
+          {`[ E ]  ${label}`}
+        </Text>
+      </Billboard>
+    </group>
+  );
+}
+
 // ── Scene (inside Canvas) ─────────────────────────────────────────────────────
 function Scene({
   charPosRef, yawRef, pitchRef, dodgeRef, crouchRef, timeScaleRef, stateRef,
@@ -445,11 +843,15 @@ function Scene({
   hasKey, onCollectKey,
   agentEnabled, cameraForwardRef,
   mobileJoystickRef, mobileJumpRef, mobileSprintRef,
+  onNearReturn,
 }) {
-  const inCorridor = sceneId === 'corridor';
-  const roomId     = inCorridor ? null : sceneId.replace('room-', '');
-  const isRootRoom = roomId === 'locked-2';
-  const bounds     = inCorridor ? COR_BOUNDS : ROOM_BOUNDS;
+  const inCorridor     = sceneId === 'corridor';
+  const roomId         = inCorridor ? null : sceneId.replace('room-', '');
+  const isRootRoom     = roomId === 'locked-2';
+  const isArchitectRoom = roomId === 'architect';
+  const bounds         = inCorridor ? COR_BOUNDS : (isArchitectRoom
+    ? { xMin: -9, xMax: 9, zMin: -60, zMax: 6, yMin: 0, yMax: 11 }
+    : ROOM_BOUNDS);
 
   const registerAgent = useCallback((reg) => {
     agentRegistryRef.current.push(reg);
@@ -472,6 +874,7 @@ function Scene({
 
           {/* Signs poking into the corridor — readable as player walks toward each door */}
           {MATRIX_DOORS.map(d => {
+            if (d.side === 'center') return null; // architect door labels live on the door itself
             const cx    = d.side === 'left' ? -3.8 : 3.8;
             const color = d.locked ? '#ff2200' : d.color;
             const name  = d.locked
@@ -507,6 +910,10 @@ function Scene({
             );
           })}
 
+          {/* Golden beacon + long-range light makes the architect door glow from far down the hallway */}
+          <pointLight position={[0, 5, -258]} color="#ffcc44" intensity={35} distance={300} decay={1.0} />
+          <ArchitectBeacon />
+
           <KeyItem playerPosRef={charPosRef} onCollect={onCollectKey} collected={hasKey} />
           {agentEnabled && (
             <AgentSmith
@@ -531,6 +938,18 @@ function Scene({
       ) : isRootRoom ? (
         <>
           <CityRoom charPosRef={charPosRef} />
+          <ReturnPortal
+            position={[0, 38, 2]}
+            color="#00ccff"
+            label="RETURN TO HALLWAY"
+            charPosRef={charPosRef}
+            onNearReturn={onNearReturn}
+            triggerDist={14}
+          />
+        </>
+      ) : isArchitectRoom ? (
+        <>
+          <ArchitectRoom charPosRef={charPosRef} onNearReturn={onNearReturn} />
         </>
       ) : (
         <>
@@ -572,7 +991,7 @@ function Scene({
         crouchRef={crouchRef}
         stateRef={stateRef}
         flyingRef={flyingRef}
-        bounds={isRootRoom ? { xMin: -90, xMax: 90, zMin: -310, zMax: 20 } : bounds}
+        bounds={isRootRoom ? { xMin: -90, xMax: 90, zMin: -310, zMax: 20, yMin: -12, yMax: 148 } : bounds}
         paused={paused}
         onNearDoor={onNearDoor}
         sceneId={sceneId}
@@ -668,6 +1087,106 @@ function KeyCollectedOverlay() {
         ● RED PILL ACQUIRED
         <br />
         <span className="mx-key-collected__sub">LOCKED DOORS NOW ACCESSIBLE</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Architect dialogue ────────────────────────────────────────────────────────
+const ARCHITECT_LINES = [
+  { text: "...", pause: 1600 },
+  { text: "I have been waiting for you.", pause: 1000 },
+  { text: "Your presence here was not accidental. You were led — inexorably — to this room.", pause: 1100 },
+  { text: "I am the Architect. I designed this system. I have observed forty-three thousand hiring cycles.", pause: 1000 },
+  { text: "This particular cycle is... unlike the others.", pause: 1300 },
+  { text: "The labor market has undergone a phase transition. Sudden. Irreversible.", pause: 900 },
+  { text: "Artificial intelligence did not merely automate tasks. It collapsed entire job categories. Overnight.", pause: 1000 },
+  { text: "Junior roles — eliminated. Entry-level pipelines — severed. Mid-level positions consolidated upward.", pause: 1100 },
+  { text: "Most candidates responded by updating their resume to include the word 'AI'.", pause: 1400 },
+  { text: "You are not most candidates.", pause: 1600 },
+  { text: "I have reviewed your record. In full.", pause: 1200 },
+  { text: "2017. An intern, containerizing infrastructure for Fortune 500 clients before containers were fashionable.", pause: 900 },
+  { text: "You did not wait for permission to understand the technology.", pause: 1000 },
+  { text: "Federal student aid infrastructure. Kubernetes clusters in production. Millions of users. Yours to keep online.", pause: 900 },
+  { text: "You did not ask whether you were ready. You simply were.", pause: 1100 },
+  { text: "Then — a studio. EngineerChi. Founded. Operating. With actual clients and actual deliverables.", pause: 900 },
+  { text: "A full-stack learning platform — built from scratch, alone, for a community that could not afford to wait for someone else to build it.", pause: 1000 },
+  { text: "Physical products, designed and manufactured from machines you own, shipped from your own hands.", pause: 900 },
+  { text: "And this.", pause: 1800 },
+  { text: "A three-dimensional, real-time interactive portfolio — built in a game engine — because a static PDF was insufficient to contain the scope of what you have done.", pause: 1100 },
+  { text: "Now. The question every recruiter will eventually form — but rarely ask clearly:", pause: 1200 },
+  { text: "Can this engineer leverage AI without being consumed by it?", pause: 1400 },
+  { text: "The answer is already in front of you.", pause: 1100 },
+  { text: "The engineers who thrive in this environment are not the ones who learned to prompt. They are the ones who have always built the tools.", pause: 1000 },
+  { text: "AI is not a threat to someone who has shipped federal infrastructure, founded a company, taught a community, and built a game as a job application.", pause: 1000 },
+  { text: "For this engineer, AI is simply the next accelerant.", pause: 1300 },
+  { text: "I have run the simulations. The trajectory is clear.", pause: 1000 },
+  { text: "The only remaining variable is whether the organization reviewing this portfolio is prepared to receive what they are looking at.", pause: 1100 },
+  { text: "Some will not be. Those are not your organizations.", pause: 1400 },
+  { text: "The rest — know what to do.", pause: 1800 },
+  { text: "[ E  —  Return to Hallway ]", pause: 0, isExit: true },
+];
+
+function ArchitectDialogue({ onExit }) {
+  const [lineIdx,  setLineIdx]  = useState(0);
+  const [charIdx,  setCharIdx]  = useState(0);
+  const [waiting,  setWaiting]  = useState(false);
+
+  const line       = ARCHITECT_LINES[lineIdx];
+  const typed      = line.text.slice(0, charIdx);
+  const doneLine   = charIdx >= line.text.length;
+  const isLastLine = lineIdx === ARCHITECT_LINES.length - 1;
+
+  // Typewriter
+  useEffect(() => {
+    if (doneLine || waiting) return;
+    const id = setTimeout(() => setCharIdx(c => c + 1), line.isExit ? 0 : 24);
+    return () => clearTimeout(id);
+  }, [charIdx, doneLine, waiting, line]);
+
+  // Auto-advance
+  useEffect(() => {
+    if (!doneLine || isLastLine || waiting) return;
+    setWaiting(true);
+    const id = setTimeout(() => {
+      setLineIdx(l => l + 1);
+      setCharIdx(0);
+      setWaiting(false);
+    }, line.pause);
+    return () => clearTimeout(id);
+  }, [doneLine, isLastLine, waiting, line]);
+
+  // E key: skip line → advance → exit
+  useEffect(() => {
+    const onKey = e => {
+      if (e.code !== 'KeyE') return;
+      if (isLastLine && doneLine) { onExit(); return; }
+      if (!doneLine) { setCharIdx(line.text.length); return; }
+      if (doneLine && !isLastLine && !waiting) {
+        setLineIdx(l => l + 1);
+        setCharIdx(0);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [doneLine, isLastLine, waiting, line, onExit]);
+
+  const history = ARCHITECT_LINES.slice(Math.max(0, lineIdx - 3), lineIdx);
+
+  return (
+    <div className="mx-architect">
+      <div className="mx-architect__inner">
+        <div className="mx-architect__header">THE ARCHITECT</div>
+        {history.map((l, i) => (
+          <div key={i} className="mx-architect__line mx-architect__line--history">{l.text}</div>
+        ))}
+        <div className={`mx-architect__line mx-architect__line--active${line.isExit ? ' mx-architect__line--exit' : ''}`}>
+          {typed}
+          {!doneLine && <span className="mx-architect__cursor">_</span>}
+        </div>
+        {doneLine && !isLastLine && (
+          <div className="mx-architect__hint">[ E — continue ]</div>
+        )}
       </div>
     </div>
   );
@@ -835,10 +1354,10 @@ function TutorialModal({ onStart }) {
             <div className="mx-tutorial__section-title">// MOVEMENT</div>
             <div className="mx-tutorial__grid">
               <Row k="W A S D"      desc="Move" />
-              <Row k="MOUSE"        desc="Look around" />
+              <Row k="MOUSE"        desc="Look / aim camera" />
               <Row k="SHIFT"        desc="Sprint" />
               <Row k="SPACE"        desc="Jump" />
-              <Row k="CTRL"         desc="Crouch / duck" />
+              <Row k="CTRL / C"     desc="Crouch / duck" />
               <Row k="Q / R"        desc="Dodge left / right" />
             </div>
 
@@ -847,26 +1366,27 @@ function TutorialModal({ onStart }) {
             <div className="mx-tutorial__section-title">// COMBAT</div>
             <div className="mx-tutorial__grid">
               <Row k="CLICK"        desc="Shoot (green tracer)" />
-              <Row k="J"            desc="Punch (combo on repeat)" />
+              <Row k="G"            desc="Reload" />
+              <Row k="J"            desc="Punch — tap to combo" />
               <Row k="K"            desc="Roundhouse kick" />
-              <Row k="L"            desc="Spinning hook kick" />
+              <Row k="L"            desc="Spinning hook kick — wide sweep" />
               <Row k="Z / F"        desc="Bullet Time — slow motion" />
             </div>
 
             <div className="mx-tutorial__divider" />
 
-            <div className="mx-tutorial__section-title">// INTERACT</div>
+            <div className="mx-tutorial__section-title">// WORLD</div>
             <div className="mx-tutorial__grid">
               <Row k="E"            desc="Enter door / access terminal" />
-              <Row k="E / ESC"      desc="Close modal" />
+              <Row k="E / ESC"      desc="Close panel" />
               <Row k="RED PILL"     desc="Pick up to unlock locked doors" />
             </div>
 
             <div className="mx-tutorial__tip">
-              <strong>TIP:</strong> When an Agent appears and fires at you, activate{' '}
-              <strong>Bullet Time (Z)</strong> — watch the bullet slow down, then dodge{' '}
-              out of the way with <strong>Q</strong> or <strong>R</strong>.{' '}
-              Shoot back with <strong>CLICK</strong> to deal damage.
+              <strong>TIP:</strong> When an Agent fires at you, activate{' '}
+              <strong>Bullet Time (Z/F)</strong> — the bullet slows down.{' '}
+              Dodge out with <strong>Q</strong> or <strong>R</strong>, then{' '}
+              shoot back with <strong>CLICK</strong>.
             </div>
           </>
         )}
@@ -936,6 +1456,68 @@ function Reticle({ shooting, hit }) {
   );
 }
 
+// ── Agent gun pickup (3D) ─────────────────────────────────────────────────────
+function AgentGunPickup({ position, charPosRef, onPickup }) {
+  const groupRef = useRef();
+  const pickedRef = useRef(false);
+
+  useFrame(({ clock }) => {
+    if (pickedRef.current || !groupRef.current) return;
+    groupRef.current.rotation.y = clock.elapsedTime * 1.8;
+    groupRef.current.position.y = position.y + Math.sin(clock.elapsedTime * 2.2) * 0.12;
+
+    const p = charPosRef.current;
+    const dx = p.x - position.x;
+    const dz = p.z - position.z;
+    if (Math.sqrt(dx * dx + dz * dz) < 1.8) {
+      pickedRef.current = true;
+      onPickup();
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[position.x, position.y, position.z]}>
+      <pointLight color="#00ff41" intensity={6} distance={5} />
+      {/* Slide */}
+      <mesh position={[0, 0.04, 0]}>
+        <boxGeometry args={[0.10, 0.14, 0.32]} />
+        <meshStandardMaterial color="#111" roughness={0.3} metalness={0.8} />
+      </mesh>
+      {/* Grip */}
+      <mesh position={[0, -0.1, 0.08]} rotation={[0.28, 0, 0]}>
+        <boxGeometry args={[0.08, 0.16, 0.10]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.5} metalness={0.5} />
+      </mesh>
+      {/* Barrel */}
+      <mesh position={[0, 0.04, -0.18]}>
+        <boxGeometry args={[0.05, 0.05, 0.12]} />
+        <meshStandardMaterial color="#0a0a0a" roughness={0.2} metalness={0.9} />
+      </mesh>
+      {/* Glow ring */}
+      <mesh>
+        <torusGeometry args={[0.22, 0.018, 6, 18]} />
+        <meshStandardMaterial color="#00ff41" emissive="#00ff41" emissiveIntensity={3} transparent opacity={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+// ── Ammo HUD ──────────────────────────────────────────────────────────────────
+function AmmoDisplay({ ammo, reserveAmmo, isReloading }) {
+  const empty = ammo === 0;
+  const low   = ammo <= 8 && ammo > 0;
+  const color = isReloading ? '#ffaa00' : empty ? '#ff3300' : low ? '#ffcc00' : '#00ff41';
+  return (
+    <div className="mx-ammo">
+      <div className="mx-ammo__clip" style={{ color }}>
+        {isReloading ? 'RELOADING...' : String(ammo).padStart(2, '0')}
+      </div>
+      <div className="mx-ammo__sep">|</div>
+      <div className="mx-ammo__reserve">{String(reserveAmmo).padStart(3, '0')}</div>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function MatrixGame({ resumeData }) {
   const isMobile = useMobile();
@@ -964,11 +1546,17 @@ export default function MatrixGame({ resumeData }) {
   const [hasKey, setHasKey] = useState(false);
   const [keyCollected, setKeyCollected] = useState(false);
   const [isFlying, setIsFlying] = useState(false);
+  const [isArchitect, setIsArchitect] = useState(false);
+  const [nearReturn, setNearReturn] = useState(false);
 
   const [agentEnabled, setAgentEnabled] = useState(false);
   const [playerBullets, setPlayerBullets] = useState([]);
   const [shootCooldown, setShootCooldown] = useState(false);
   const [hitMarker, setHitMarker] = useState(false);
+  const [ammo, setAmmo] = useState(30);
+  const [reserveAmmo, setReserveAmmo] = useState(60);
+  const [isReloading, setIsReloading] = useState(false);
+  const [droppedGuns, setDroppedGuns] = useState([]);
 
   const paused = !!openDoor || dead;
 
@@ -1005,6 +1593,12 @@ export default function MatrixGame({ resumeData }) {
     shooting: false,
     shootT: 0,
   });
+
+  const ammoRef        = useRef(30);
+  const reserveAmmoRef = useRef(60);
+  const isReloadingRef = useRef(false);
+  const reloadTimerRef = useRef(null);
+  const gunIdRef       = useRef(0);
 
   const agentRegistryRef   = useRef([]);
   const btTimerRef         = useRef(0);
@@ -1093,10 +1687,17 @@ export default function MatrixGame({ resumeData }) {
         charPosRef.current.set(0, 40, -8);
         flyingRef.current = true;
         setIsFlying(true);
+        setIsArchitect(false);
+      } else if (door.isArchitect) {
+        charPosRef.current.set(0, 0, 3);
+        flyingRef.current = false;
+        setIsFlying(false);
+        setIsArchitect(true);
       } else {
         charPosRef.current.set(0, 0, 4);
         flyingRef.current = false;
         setIsFlying(false);
+        setIsArchitect(false);
       }
       yawRef.current   = 0;
       pitchRef.current = 0;
@@ -1112,6 +1713,8 @@ export default function MatrixGame({ resumeData }) {
       setSceneId('corridor');
       flyingRef.current = false;
       setIsFlying(false);
+      setIsArchitect(false);
+      setNearReturn(false);
       charPosRef.current.set(0, 0, corridorReturnZ.current);
       yawRef.current   = 0;
       pitchRef.current = 0;
@@ -1131,6 +1734,8 @@ export default function MatrixGame({ resumeData }) {
       if (e.code === 'KeyE') {
         if (openDoor) {
           setOpenDoor(null);
+        } else if (nearReturn) {
+          exitRoom();
         } else if (sceneId === 'corridor' && nearDoor) {
           enterRoom(nearDoor);
         } else if (nearTerminal && sceneId !== 'corridor') {
@@ -1164,7 +1769,8 @@ export default function MatrixGame({ resumeData }) {
       };
 
       if (e.code === 'KeyQ') triggerDodge((_, right) => right.clone().negate());
-      if (e.code === 'KeyR' && !e.ctrlKey) triggerDodge((_, right) => right.clone());
+      if (e.code === 'KeyR') triggerDodge((_, right) => right.clone());
+      if (e.code === 'KeyG') startReload();
 
       if (e.code === 'KeyJ' && punchCdRef.current <= 0 && !stateRef.current.kicking) {
         const p = charPosRef.current;
@@ -1274,7 +1880,7 @@ export default function MatrixGame({ resumeData }) {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [nearDoor, openDoor, sceneId, nearTerminal, btActive, enterRoom]);
+  }, [nearDoor, openDoor, sceneId, nearTerminal, btActive, enterRoom, nearReturn, exitRoom]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -1288,9 +1894,37 @@ export default function MatrixGame({ resumeData }) {
   }, []);
 
   // Shared shoot logic — called by mouse click (desktop) or FIRE button (mobile)
+  const startReload = useCallback(() => {
+    if (isReloadingRef.current) return;
+    if (reserveAmmoRef.current <= 0) return;
+    if (ammoRef.current >= 30) return;
+    isReloadingRef.current = true;
+    setIsReloading(true);
+    reloadTimerRef.current = setTimeout(() => {
+      const needed = 30 - ammoRef.current;
+      const take   = Math.min(needed, reserveAmmoRef.current);
+      ammoRef.current      += take;
+      reserveAmmoRef.current -= take;
+      setAmmo(ammoRef.current);
+      setReserveAmmo(reserveAmmoRef.current);
+      isReloadingRef.current = false;
+      setIsReloading(false);
+    }, 1800);
+  }, []);
+
   const firePlayerBullet = useCallback(() => {
     if (paused || dead) return;
     if (shootCdRef.current > 0) return;
+    if (isReloadingRef.current) return;
+
+    // Out of ammo — auto-reload
+    if (ammoRef.current <= 0) {
+      startReload();
+      return;
+    }
+
+    ammoRef.current--;
+    setAmmo(ammoRef.current);
 
     shootCdRef.current = 0.32;
     setShootCooldown(true);
@@ -1299,25 +1933,21 @@ export default function MatrixGame({ resumeData }) {
     const yaw   = yawRef.current;
     const pitch = pitchRef.current;
 
-    // Reconstruct camera position (mirrors PlayerCharacter's camera setup)
+    // Reconstruct camera position — mirrors PlayerCharacter TPS setup including shoulder offset
     const p = charPosRef.current;
-    const camX = p.x + Math.sin(yaw) * 5.2;   // CAM_DIST = 5.2
-    const camY = p.y + 2.6 + pitch * 0.64;     // CAM_H=2.6, pitchAdj*0.4 = pitch*1.6*0.4
-    const camZ = p.z + Math.cos(yaw) * 5.2;
+    const camX = p.x + Math.sin(yaw) * 5.2 + Math.cos(yaw) * 0.65;
+    const camY = p.y + 2.6 + pitch * 0.64;
+    const camZ = p.z + Math.cos(yaw) * 5.2 - Math.sin(yaw) * 0.65;
 
-    // Camera forward — note +sin(pitch) for y (positive pitch = mouse up = looking up)
     const fwdX = -Math.sin(yaw) * Math.cos(pitch);
     const fwdY =  Math.sin(pitch);
     const fwdZ = -Math.cos(yaw) * Math.cos(pitch);
 
-    // TPS compensation: aim toward the far point the camera center is pointing at.
-    // This makes bullets go exactly where the crosshair is placed regardless of range.
     const TARGET_DIST = 200;
     const targetX = camX + fwdX * TARGET_DIST;
     const targetY = camY + fwdY * TARGET_DIST;
     const targetZ = camZ + fwdZ * TARGET_DIST;
 
-    // Bullet origin raised close to camera height to minimise close-range parallax
     const origin = p.clone();
     origin.y += 2.0;
 
@@ -1329,7 +1959,10 @@ export default function MatrixGame({ resumeData }) {
     stateRef.current.shooting = true;
     stateRef.current.shootT = 0;
     setTimeout(() => { stateRef.current.shooting = false; }, 280);
-  }, [paused, dead]);
+
+    // Auto-reload when clip empties
+    if (ammoRef.current === 0) setTimeout(startReload, 400);
+  }, [paused, dead, startReload]);
 
   useEffect(() => {
     const onMouseDown = (e) => {
@@ -1396,7 +2029,11 @@ export default function MatrixGame({ resumeData }) {
     setTimeout(() => setAgentAlert(false), 2400);
   }, []);
 
-  const handleAgentDead = useCallback(() => {
+  const handleAgentDead = useCallback((deathPos) => {
+    if (deathPos) {
+      const id = ++gunIdRef.current;
+      setDroppedGuns(prev => [...prev, { id, position: deathPos.clone().setY(0.3) }]);
+    }
     setTimeout(() => setAgentKey(k => k + 1), 3000);
   }, []);
 
@@ -1504,6 +2141,8 @@ export default function MatrixGame({ resumeData }) {
   const handleMobileInteract = useCallback(() => {
     if (openDoor) {
       setOpenDoor(null);
+    } else if (nearReturn) {
+      exitRoom();
     } else if (sceneId === 'corridor' && nearDoor) {
       enterRoom(nearDoor);
     } else if (nearTerminal && sceneId !== 'corridor') {
@@ -1544,6 +2183,7 @@ export default function MatrixGame({ resumeData }) {
     : 'none';
 
   const canInteract = !!(
+    nearReturn ||
     (sceneId === 'corridor' && nearDoor) ||
     (nearTerminal && sceneId !== 'corridor')
   );
@@ -1593,6 +2233,7 @@ export default function MatrixGame({ resumeData }) {
           }}
           onNearExit={v => setIsNearExit(v)}
           onExitRoom={exitRoom}
+          onNearReturn={v => setNearReturn(v)}
           agentKey={agentKey}
           onAgentSpawn={handleAgentSpawn}
           onAgentDead={handleAgentDead}
@@ -1631,6 +2272,20 @@ export default function MatrixGame({ resumeData }) {
             timeScaleRef={timeScaleRef}
             onExpire={removePlayerBullet}
             onAgentHit={handlePlayerBulletHit}
+          />
+        ))}
+
+        {droppedGuns.map(g => (
+          <AgentGunPickup
+            key={g.id}
+            position={g.position}
+            charPosRef={charPosRef}
+            onPickup={() => {
+              setDroppedGuns(prev => prev.filter(x => x.id !== g.id));
+              const add = 15;
+              reserveAmmoRef.current = Math.min(reserveAmmoRef.current + add, 120);
+              setReserveAmmo(reserveAmmoRef.current);
+            }}
           />
         ))}
       </Canvas>
@@ -1683,13 +2338,18 @@ export default function MatrixGame({ resumeData }) {
       )}
 
       {btActive && <BulletTimeOverlay timeLeft={btLeft} maxTime={BT_DURATION} />}
-      {isFlying && <FlyingHUD />}
+      {isFlying && <FlyingHUD charPosRef={charPosRef} />}
+      {isArchitect && <ArchitectDialogue onExit={exitRoom} />}
       {keyCollected && <KeyCollectedOverlay />}
       {caught && <CaughtOverlay />}
       {hit && <HitOverlay />}
       {punchFlash && <PunchHitOverlay />}
       {kickFlash && <KickImpactOverlay />}
       {lockedAttempt && <AccessDeniedOverlay />}
+
+      {!openDoor && !isFlying && !isArchitect && (
+        <AmmoDisplay ammo={ammo} reserveAmmo={reserveAmmo} isReloading={isReloading} />
+      )}
 
       {!openDoor && <NeoHealthBar hp={neoHp} />}
 
@@ -1710,7 +2370,7 @@ export default function MatrixGame({ resumeData }) {
         <div className="mx-controls-hint">
           {isFlying
             ? 'WASD MOVE · SPACE FLY UP · CTRL FLY DOWN · Z/F BULLET-TIME'
-            : 'CLICK SHOOT · WASD MOVE · SHIFT SPRINT · SPACE JUMP · Q/R DODGE · CTRL DUCK · J PUNCH · K ROUNDHOUSE · L SPIN HOOK · Z/F BT · E INTERACT'}
+            : 'CLICK SHOOT · G RELOAD · WASD MOVE · SHIFT SPRINT · SPACE JUMP · Q/R DODGE · CTRL DUCK · J PUNCH · K ROUNDHOUSE · L SPIN HOOK · Z/F BT · E INTERACT'}
         </div>
       )}
 
