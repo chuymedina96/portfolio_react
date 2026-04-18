@@ -36,7 +36,7 @@ Built with **React 18**, **Three.js**, and **React Three Fiber**. No game engine
 
 ## Live Demo
 
-[portfolio link here]
+[chuymedina.net](https://www.chuymedina.net)
 
 > Tip: Play in landscape on mobile. Desktop recommended for full combat.
 
