@@ -970,18 +970,42 @@
 
 /* ── Mobile / touch adjustments ─────────────────────────────────────────────── */
 @media (pointer: coarse), (max-width: 768px) {
-  /* Door list spans full width at 8 items — too wide on phone; hide it.
-     Each door already shows its label on the 3D door face itself. */
-  .mx-door-list { display: none; }
+  /* Corridor navigation: show as a compact vertical timeline on the left */
+  .mx-door-list {
+    display: flex !important;
+    flex-direction: column;
+    top: 8px;
+    left: 10px;
+    transform: none;
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.60);
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 255, 65, 0.13);
+  }
+  .mx-door-list__sep         { display: none; }
+  .mx-door-list__item--locked { display: none; }   /* hide restricted/locked rooms */
+  .mx-door-list__item        { padding: 3px 7px; background: transparent; border-color: transparent; }
+  .mx-door-list__item--active {
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+    border-color: color-mix(in srgb, var(--c) 45%, transparent);
+  }
+  .mx-door-list__name { font-size: 0.62rem; letter-spacing: 0.09em; }
+  .mx-door-list__item--active .mx-door-list__name { font-size: 0.64rem; }
+
+  /* The hud-starmap is redundant with the door list on mobile — hide it */
+  .matrix-hud .hud-starmap { display: none !important; }
 
   /* Reticle crosshair is keyboard/mouse aiming aid — not needed on touch */
   .mx-reticle { display: none; }
 
-  /* Health bar: move to top-left, larger and more readable on mobile */
+  /* Health bar: move to top-right below the ammo display */
   .mx-health {
     bottom: auto;
-    top: 50px;
-    left: 8px;
+    top: 96px;
+    left: auto;
+    right: 14px;
+    position: fixed;
     background: rgba(0, 0, 0, 0.55);
     padding: 5px 9px 7px;
     border-radius: 6px;
@@ -993,18 +1017,18 @@
     letter-spacing: 0.12em;
   }
   .mx-health__track {
-    width: 150px;
+    width: 130px;
     height: 11px;
     border: 1px solid rgba(0, 255, 65, 0.38);
   }
   .mx-health__fill { height: 100%; }
 
-  /* Key / red pill indicator: sits just below health bar on mobile */
+  /* Key / red pill indicator: below health bar on the right */
   .mx-key-indicator {
     bottom: auto;
-    top: 130px;
-    right: unset;
-    left: 12px;
+    top: 162px;
+    right: 14px;
+    left: unset;
     font-size: 0.68rem;
   }
 

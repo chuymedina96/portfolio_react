@@ -1095,6 +1095,7 @@ function Scene({
         crouchRef={crouchRef}
         stateRef={stateRef}
         flyingRef={flyingRef}
+        blockRef={blockRef}
         bounds={isRootRoom ? { xMin: -90, xMax: 90, zMin: -310, zMax: 20, yMin: -12, yMax: 148 } : bounds}
         paused={paused}
         onNearDoor={onNearDoor}

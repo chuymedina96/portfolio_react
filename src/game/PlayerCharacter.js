@@ -27,7 +27,7 @@ const _lookAt = new THREE.Vector3();
 // ── Neo body ───────────────────────────────────────────────────────────────────
 // Intentionally blocky / voxel style but with Neo's distinctive silhouette:
 // long trench coat, round wire glasses, slicked hair, tall lean build
-function NeoBody({ stateRef }) {
+function NeoBody({ stateRef, blockRef }) {
   const lLeg    = useRef(), rLeg = useRef();
   const lArm    = useRef(), rArm = useRef();
   const kickR   = useRef();
@@ -40,43 +40,54 @@ function NeoBody({ stateRef }) {
     const t  = clock.elapsedTime;
     const wf = t * (s.running ? 14 : 9);
     const wa = s.moving ? (s.running ? 0.55 : 0.40) : 0;
+    const blocking = blockRef?.current ?? false;
 
     // Walk legs
     if (lLeg.current && !s.kicking && !s.spinKicking) lLeg.current.rotation.x =  Math.sin(wf) * wa;
     if (rLeg.current && !s.kicking && !s.spinKicking) rLeg.current.rotation.x = -Math.sin(wf) * wa;
 
-    // Jab / cross (alternate arms)
-    const pAmp = -Math.PI * 0.92 * Math.sin(s.punchT * Math.PI);
+    // Jab / cross / uppercut (alternate arms): altArm 0=right jab, 1=left cross, 2=right uppercut
+    const pAmp      = -Math.PI * 0.92 * Math.sin(s.punchT * Math.PI);
+    const upperAmpX =  Math.PI * 0.95 * Math.sin(s.punchT * Math.PI); // upward arc
+    const upperAmpZ = -0.55       * Math.sin(s.punchT * Math.PI);      // inward twist
+
     if (lArm.current) {
-      // Flying: arms spread wide like Neo soaring
-      const flyTgtX = s.flying ? Math.PI * 0.28 : 0;
-      const flyTgtZ = s.flying ? 0.9 : 0;
-      // Roundhouse: left arm raises as a guard/balance (spin kick overrides in its own block)
+      const flyTgtX  = s.flying ? Math.PI * 0.28 : 0;
+      const flyTgtZ  = s.flying ? 0.9 : 0;
       const rhGuardX = (s.kicking && !s.flyKick) ? -Math.PI * 0.55 : 0;
-      const tgt = s.spinKicking ? lArm.current.rotation.x  // spin kick handles its own arms
-        : s.flying ? flyTgtX : (s.punching && s.altArm === 1) ? pAmp : (s.kicking && !s.flyKick) ? rhGuardX : -Math.sin(wf) * wa * 0.5;
+      const tgt = s.spinKicking ? lArm.current.rotation.x
+        : blocking            ? -1.15                           // guard: left arm up
+        : s.flying            ? flyTgtX
+        : (s.punching && s.altArm === 2) ? -0.65               // uppercut: left arm guard raise
+        : (s.punching && s.altArm === 1) ? pAmp
+        : (s.kicking && !s.flyKick)      ? rhGuardX
+        : -Math.sin(wf) * wa * 0.5;
       lArm.current.rotation.x = THREE.MathUtils.lerp(lArm.current.rotation.x, tgt, 0.18);
-      lArm.current.rotation.z = THREE.MathUtils.lerp(lArm.current.rotation.z,
-        s.spinKicking ? lArm.current.rotation.z
-        : s.flying ? flyTgtZ : (s.kicking && s.flyKick) ? 0.45 : (s.kicking ? 0.35 : 0), 0.18);
+      const tgtZ = s.spinKicking ? lArm.current.rotation.z
+        : blocking ? 0.45
+        : s.flying ? flyTgtZ : (s.kicking && s.flyKick) ? 0.45 : (s.kicking ? 0.35 : 0);
+      lArm.current.rotation.z = THREE.MathUtils.lerp(lArm.current.rotation.z, tgtZ, 0.18);
     }
     if (rArm.current) {
-      // During flying kick, both arms spread wide for balance
       const kickSpread = (s.kicking && s.flyKick) ? Math.PI * 0.35 : 0;
-      const flyTgtX = s.flying ? Math.PI * 0.28 : 0;
-      // Roundhouse: right arm pulls back (spin kick overrides in its own block)
-      const rhKickTgt = (s.kicking && !s.flyKick) ? Math.PI * 0.45 : kickSpread;
-      const tgt = s.spinKicking ? rArm.current.rotation.x  // spin kick handles its own arms
-        : s.flying ? flyTgtX
-        : s.kicking ? rhKickTgt
-        : (s.punching && s.altArm === 0) ? pAmp : Math.sin(wf) * wa * 0.5;
+      const flyTgtX    = s.flying ? Math.PI * 0.28 : 0;
+      const rhKickTgt  = (s.kicking && !s.flyKick) ? Math.PI * 0.45 : kickSpread;
+      const tgt = s.spinKicking ? rArm.current.rotation.x
+        : blocking                       ? -1.0                 // guard: right arm up
+        : s.flying                       ? flyTgtX
+        : s.kicking                      ? rhKickTgt
+        : (s.punching && s.altArm === 2) ? upperAmpX            // uppercut: upward swing
+        : (s.punching && s.altArm === 0) ? pAmp
+        : Math.sin(wf) * wa * 0.5;
       rArm.current.rotation.x = THREE.MathUtils.lerp(rArm.current.rotation.x, tgt, 0.18);
-      rArm.current.rotation.z = THREE.MathUtils.lerp(
-        rArm.current.rotation.z,
-        s.spinKicking ? rArm.current.rotation.z
-        : s.flying ? -0.9 : (s.kicking && s.flyKick) ? -0.45 : (s.kicking ? -0.55 : 0),
-        0.18
-      );
+      const tgtZ = s.spinKicking ? rArm.current.rotation.z
+        : blocking                       ? -0.42
+        : s.flying                       ? -0.9
+        : (s.kicking && s.flyKick)       ? -0.45
+        : s.kicking                      ? -0.55
+        : (s.punching && s.altArm === 2) ? upperAmpZ            // uppercut: inward twist
+        : 0;
+      rArm.current.rotation.z = THREE.MathUtils.lerp(rArm.current.rotation.z, tgtZ, 0.18);
       if (s.shooting) {
         const sAmp = -Math.PI * 0.7 * Math.sin((s.shootT || 0) * Math.PI);
         rArm.current.rotation.x = THREE.MathUtils.lerp(rArm.current.rotation.x, sAmp, 0.4);
@@ -173,6 +184,7 @@ function NeoBody({ stateRef }) {
     if (tilt.current) {
       const tz = s.dodging   ? s.dodgeDir * 0.38 : 0;
       const tx = s.flying    ? 0.28
+               : blocking    ? -0.18                  // block: slight forward hunch
                : s.crouching ? 0.65
                : s.kicking   ? -0.22
                : !s.grounded ? -0.14
@@ -394,6 +406,7 @@ export default function PlayerCharacter({
   crouchRef,
   stateRef,
   flyingRef,
+  blockRef,
   bounds,
   paused,
   onNearDoor,
@@ -665,7 +678,7 @@ export default function PlayerCharacter({
 
   return (
     <group ref={groupRef}>
-      <NeoBody stateRef={stateRef} />
+      <NeoBody stateRef={stateRef} blockRef={blockRef} />
       {/* Ground shadow */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
         <circleGeometry args={[0.52, 12]} />
