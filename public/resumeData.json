@@ -150,7 +150,7 @@
         "category": "Civic transparency app built in Django. Chicago residents can search any CPD officer by name or badge number and leave public ratings on their interactions — putting accountability data in the hands of the community.",
         "image": "searchcpd.png",
         "url": "https://www.searchcpd.com/",
-        "github": "https://github.com/chuymedina96/search_cpd_open"
+        "github": "https://github.com/chuymedina96/pd_search"
       }
     ]
   },
