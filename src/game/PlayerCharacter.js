@@ -435,7 +435,7 @@ export default function PlayerCharacter({
       );
     };
     const onClick = () => {
-      if (!document.pointerLockElement && !paused) gl.domElement.requestPointerLock();
+      if (!document.pointerLockElement && !paused) gl.domElement.requestPointerLock?.();
     };
     document.addEventListener('mousemove', onMove);
     gl.domElement.addEventListener('click', onClick);

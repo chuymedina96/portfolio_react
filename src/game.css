@@ -280,13 +280,18 @@
   .hud-panel-close-footer { display: block; flex-shrink: 0; }
   /* Make the header ✕ bigger on touch */
   .hud-close-btn { width: 48px; height: 48px; font-size: 1.2rem; }
-  /* Push panel up a bit more to leave room for game UI at bottom */
-  .hud-panel { max-height: 82vh; }
+  /* Use dvh so the panel shrinks when the software keyboard opens,
+     keeping the panel fully visible above the keyboard */
+  .hud-panel { max-height: 82dvh; }
+  .hud-overlay { align-items: flex-start; padding-top: 4dvh; }
 }
 
 .hud-panel-content {
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;

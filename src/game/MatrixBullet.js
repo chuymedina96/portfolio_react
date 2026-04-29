@@ -71,7 +71,6 @@ export default function MatrixBullet({ id, origin, direction, playerPosRef, crou
 
   return (
     <group ref={groupRef}>
-      <pointLight color="#ffcc00" intensity={6} distance={8} decay={2} />
       <mesh>
         <sphereGeometry args={[0.13, 6, 4]} />
         <meshStandardMaterial color="#ffffff" emissive="#ffdd00" emissiveIntensity={22} />

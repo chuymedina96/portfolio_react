@@ -1,7 +1,249 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { STATIONS } from './constants';
+import { isMobileDevice } from './useMobile';
 
 // ── Panel content ──────────────────────────────────────────────────────────────
+
+// ── Zion Mainframe interactive terminal ───────────────────────────────────────
+const TERM_COLORS = {
+  sys:   '#00ff41',
+  head:  '#00ffcc',
+  out:   '#99ffaa',
+  dim:   '#336644',
+  input: '#ffffff',
+  warn:  '#ffcc00',
+  err:   '#ff4444',
+};
+
+const BOOT = [
+  { t: 'sys', v: 'ZION MAINFRAME  v4.7.2 — SECURE SHELL' },
+  { t: 'sys', v: 'AUTH LEVEL: OPERATOR  ●  SESSION OPEN' },
+  { t: 'dim', v: '──────────────────────────────────────────' },
+  { t: 'sys', v: 'Connection established.  Welcome, Neo.' },
+  { t: 'dim', v: 'Type "help" to list available commands.' },
+];
+
+function ZionTerminalPanel({ resumeData, onUndock }) {
+  const main      = resumeData?.main      ?? {};
+  const resume    = resumeData?.resume    ?? {};
+  const portfolio = resumeData?.portfolio ?? {};
+
+  const isMobile = isMobileDevice();
+
+  const [lines, setLines]       = useState(() => BOOT.map((l, i) => ({ ...l, id: i })));
+  const [input, setInput]       = useState('');
+  const [cmdHist, setCmdHist]   = useState([]);
+  const [histIdx, setHistIdx]   = useState(-1);
+  const [kbOpen, setKbOpen]     = useState(false);
+  const inputRef  = useRef();
+  const bottomRef = useRef();
+
+  // Only auto-focus on desktop — on mobile the keyboard would immediately block the terminal
+  useEffect(() => { if (!isMobile) inputRef.current?.focus(); }, [isMobile]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [lines]);
+
+  const push = (newLines) =>
+    setLines(prev => [...prev, ...newLines.map((l, i) => ({ ...l, id: Date.now() + i }))]);
+
+  const process = (raw) => {
+    const cmd   = raw.trim();
+    if (!cmd) return;
+    setCmdHist(h => [cmd, ...h]);
+    setHistIdx(-1);
+
+    const out = [{ t: 'input', v: `> ${cmd}` }];
+    const lo  = cmd.toLowerCase();
+
+    if (lo === 'help') {
+      out.push(
+        { t: 'head', v: 'AVAILABLE COMMANDS' },
+        { t: 'out',  v: '  whoami            identity scan' },
+        { t: 'out',  v: '  ls                list directory' },
+        { t: 'out',  v: '  cat bio.txt        personal record' },
+        { t: 'out',  v: '  cat skills.txt     neural analysis' },
+        { t: 'out',  v: '  cat history.log    mission log' },
+        { t: 'out',  v: '  cat projects.txt   known operations' },
+        { t: 'out',  v: '  cat contact.txt    open comms' },
+        { t: 'out',  v: '  hack               ???' },
+        { t: 'out',  v: '  clear              purge output' },
+        { t: 'out',  v: '  exit               disconnect' },
+      );
+    } else if (lo === 'whoami') {
+      out.push(
+        { t: 'head', v: 'IDENTITY SCAN' },
+        { t: 'out',  v: `  OPERATOR   ${main.name      ?? '???'}` },
+        { t: 'out',  v: `  TITLE      ${main.occupation ?? '???'}` },
+        { t: 'out',  v: `  LOCATION   ${main.address?.city ?? '?'}, ${main.address?.state ?? '?'}` },
+        { t: 'out',  v: `  STATUS     ● AVAILABLE FOR HIRE` },
+        { t: 'out',  v: `  EMAIL      ${main.email ?? '???'}` },
+      );
+    } else if (lo === 'ls') {
+      out.push(
+        { t: 'head', v: 'DIRECTORY: /zion/operator/' },
+        { t: 'out',  v: '  bio.txt' },
+        { t: 'out',  v: '  skills.txt' },
+        { t: 'out',  v: '  history.log' },
+        { t: 'out',  v: '  projects.txt' },
+        { t: 'out',  v: '  contact.txt' },
+        { t: 'dim',  v: '  classified.enc    [ENCRYPTED — LEVEL 9 CLEARANCE]' },
+      );
+    } else if (lo === 'cat bio.txt') {
+      out.push({ t: 'head', v: 'FILE: bio.txt' });
+      const bio = main.bio || main.description || '';
+      // Wrap at ~60 chars on word boundaries
+      const words = bio.split(' ');
+      let line = ' ';
+      words.forEach(w => {
+        if ((line + w).length > 62) { out.push({ t: 'out', v: line }); line = '  ' + w + ' '; }
+        else { line += w + ' '; }
+      });
+      if (line.trim()) out.push({ t: 'out', v: line });
+    } else if (lo === 'cat skills.txt') {
+      out.push({ t: 'head', v: 'NEURAL PATHWAY ANALYSIS' });
+      (resume.skills ?? []).forEach(s => {
+        const pct  = parseInt(s.level) || 0;
+        const fill = Math.round(pct / 5);
+        const bar  = '█'.repeat(fill) + '░'.repeat(20 - fill);
+        out.push({ t: 'out', v: `  ${s.name.padEnd(14)} [${bar}]  ${s.level}` });
+      });
+    } else if (lo === 'cat history.log') {
+      out.push({ t: 'head', v: 'MISSION LOG' });
+      (resume.work ?? []).forEach(w => {
+        out.push(
+          { t: 'out', v: `  ▸ ${w.company}  —  ${w.title}` },
+          { t: 'dim', v: `    ${w.years}` },
+          { t: 'dim', v: `    ${w.description.slice(0, 110)}…` },
+        );
+      });
+    } else if (lo === 'cat projects.txt') {
+      out.push({ t: 'head', v: 'KNOWN OPERATIONS' });
+      (portfolio.projects ?? []).forEach(p => {
+        out.push(
+          { t: 'out', v: `  ▸ ${p.title}` },
+          { t: 'dim', v: `    ${p.url || 'URL: CLASSIFIED'}` },
+        );
+      });
+    } else if (lo === 'cat contact.txt') {
+      out.push(
+        { t: 'head', v: 'OPEN COMMS CHANNEL' },
+        { t: 'out',  v: `  EMAIL    ${main.email ?? '???'}` },
+        { t: 'out',  v: `  PHONE    ${main.phone ?? '???'}` },
+        ...(main.social ?? []).map(s => ({
+          t: 'out', v: `  ${s.name.toUpperCase().padEnd(9)}  ${s.url}`,
+        })),
+      );
+    } else if (lo === 'cat classified.enc') {
+      out.push(
+        { t: 'warn', v: '  ACCESS DENIED.' },
+        { t: 'dim',  v: '  You are not The One.' },
+      );
+    } else if (['hack', 'sudo hack', 'hack --system', 'hack --matrix'].includes(lo)) {
+      out.push(
+        { t: 'warn', v: '  INITIATING BREACH SEQUENCE...' },
+        { t: 'warn', v: '  [████████████████████████████████████]  100%' },
+        { t: 'out',  v: '  ROOT ACCESS GRANTED.' },
+        { t: 'out',  v: '  There is no spoon.' },
+        { t: 'dim',  v: '  (nice try)' },
+      );
+    } else if (lo === 'clear') {
+      setLines(BOOT.map((l, i) => ({ ...l, id: i })));
+      setInput('');
+      return;
+    } else if (['exit', 'quit', 'disconnect', 'logout'].includes(lo)) {
+      push([...out, { t: 'sys', v: '  Closing secure channel...' }].map((l, i) => ({ ...l, id: Date.now() + i })));
+      setInput('');
+      setTimeout(onUndock, 700);
+      return;
+    } else {
+      out.push(
+        { t: 'err', v: `  command not found: ${cmd}` },
+        { t: 'dim', v: '  Type "help" for available commands.' },
+      );
+    }
+
+    push(out);
+    setInput('');
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      process(input);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const i = Math.min(histIdx + 1, cmdHist.length - 1);
+      setHistIdx(i);
+      setInput(cmdHist[i] ?? '');
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const i = Math.max(histIdx - 1, -1);
+      setHistIdx(i);
+      setInput(i === -1 ? '' : cmdHist[i] ?? '');
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden',
+        fontFamily: '"Share Tech Mono", monospace', fontSize: '0.78rem',
+        background: '#000', padding: '12px 14px', boxSizing: 'border-box',
+        cursor: 'text',
+      }}
+      onClick={() => inputRef.current?.focus()}
+    >
+      {/* Scrollable output */}
+      <div style={{
+        flex: 1, overflowY: 'auto', paddingBottom: 6,
+        WebkitOverflowScrolling: 'touch', touchAction: 'pan-y',
+      }}>
+        {lines.map(l => (
+          <div key={l.id} style={{
+            color: TERM_COLORS[l.t] ?? '#00ff41',
+            lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+          }}>
+            {l.v}
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input row — on mobile show a tap-to-type button until focused */}
+      <div style={{
+        borderTop: '1px solid #0a2a14', paddingTop: 8, flexShrink: 0,
+      }}>
+        {isMobile && !kbOpen ? (
+          <button
+            onClick={() => { setKbOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
+            style={{
+              width: '100%', padding: '10px 0', background: 'rgba(0,255,65,0.08)',
+              border: '1px solid #00ff41', borderRadius: 4, color: '#00ff41',
+              fontFamily: 'inherit', fontSize: '0.78rem', cursor: 'pointer',
+              letterSpacing: '0.1em',
+            }}
+          >
+            ▶ TAP TO TYPE
+          </button>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: '#00ff41', whiteSpace: 'nowrap' }}>zion@mainframe:~$</span>
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              onBlur={() => isMobile && setKbOpen(false)}
+              autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+              style={{
+                flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                color: '#fff', fontFamily: 'inherit', fontSize: 'inherit', caretColor: '#00ff41',
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function AboutPanel({ data }) {
   if (!data) return <p style={{ color: 'var(--text-dim)' }}>Loading...</p>;
@@ -175,10 +417,11 @@ function DockedPanel({ dockedStation, stationColor, onUndock, content }) {
 
 export default function HUD({ nearStation, dockedStation, onUndock, resumeData, mode = 'space', stations = STATIONS }) {
   const PANEL_MAP = {
-    about:     <AboutPanel     data={resumeData?.main}      />,
-    resume:    <ResumePanel    data={resumeData?.resume}    />,
-    portfolio: <PortfolioPanel data={resumeData?.portfolio} />,
-    contact:   <ContactPanel   data={resumeData?.main}      />,
+    about:      <AboutPanel          data={resumeData?.main}      />,
+    resume:     <ResumePanel         data={resumeData?.resume}    />,
+    portfolio:  <PortfolioPanel      data={resumeData?.portfolio} />,
+    contact:    <ContactPanel        data={resumeData?.main}      />,
+    'locked-3': <ZionTerminalPanel   resumeData={resumeData}      onUndock={onUndock} />,
   };
 
   const stationColor = dockedStation

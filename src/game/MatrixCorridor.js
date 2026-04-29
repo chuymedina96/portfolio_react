@@ -68,12 +68,12 @@ function CeilingLight({ zC }) {
         <boxGeometry args={[2.4, 0.03, SEG_LEN * 0.7]} />
         <meshStandardMaterial color={L} emissive={L} emissiveIntensity={2.6} />
       </mesh>
-      {/* Single fill light per segment — was 3 */}
+      {/* Single fill light per segment — radius kept tight so lights don't stack */}
       <pointLight
         position={[0, CEIL_Y - 0.6, pz]}
         color={L}
-        intensity={10}
-        distance={SEG_LEN * 0.75}
+        intensity={12}
+        distance={SEG_LEN * 0.42}
         decay={2}
       />
     </group>

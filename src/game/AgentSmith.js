@@ -160,12 +160,14 @@ function AgentBody({ movingRef, hitFlashRef, deadRef, deathTRef, punchRef }) {
 
 // ── 3-D health bar (floats above head) ────────────────────────────────────────
 function AgentHealthBar({ hpRef, deadRef }) {
-  const fillRef = useRef();
-  const groupRef = useRef();
+  const fillRef   = useRef();
+  const groupRef  = useRef();
+  const frameRef  = useRef(0);
 
   useFrame(({ camera }) => {
+    frameRef.current++;
+    if (frameRef.current % 2 !== 0) return; // 30 Hz — billboard + color math don't need 60 Hz
     if (!groupRef.current) return;
-    // Billboard: always face camera
     groupRef.current.quaternion.copy(camera.quaternion);
 
     if (deadRef.current) { groupRef.current.visible = false; return; }
@@ -173,10 +175,8 @@ function AgentHealthBar({ hpRef, deadRef }) {
 
     if (!fillRef.current) return;
     const ratio = Math.max(0, hpRef.current / MAX_HP);
-    // Scale X, anchor left: position.x shifts so left edge stays fixed
     fillRef.current.scale.x = Math.max(0.001, ratio);
     fillRef.current.position.x = -(1 - ratio) * 0.66;
-    // Colour: green → yellow → red
     const m = fillRef.current.material;
     if (m) {
       m.color.setHSL(ratio * 0.32, 1, 0.48);

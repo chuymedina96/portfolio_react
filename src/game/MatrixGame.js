@@ -39,19 +39,22 @@ const ROOM_BOUNDS = {
 function KeyItem({ playerPosRef, onCollect, collected }) {
   const meshRef   = useRef();
   const doneRef   = useRef(false);
+  const frameRef  = useRef(0);
 
   useFrame(({ clock }) => {
     if (doneRef.current) return;
     if (collected) { doneRef.current = true; return; }
+    frameRef.current++;
+    // Proximity check every frame (cheap), visuals at 30 Hz
+    const p = playerPosRef.current;
+    const d = Math.sqrt((p.x - KEY_POSITION.x) ** 2 + (p.z - KEY_POSITION.z) ** 2);
+    if (d < 1.8) { doneRef.current = true; onCollect?.(); return; }
+    if (frameRef.current % 2 !== 0) return;
     const t = clock.elapsedTime;
     if (meshRef.current) {
       meshRef.current.rotation.y = t * 2.2;
       meshRef.current.position.y = KEY_POSITION.y + Math.sin(t * 2.4) * 0.14;
     }
-    // Auto-collect on proximity
-    const p = playerPosRef.current;
-    const d = Math.sqrt((p.x - KEY_POSITION.x) ** 2 + (p.z - KEY_POSITION.z) ** 2);
-    if (d < 1.8) { doneRef.current = true; onCollect?.(); }
   });
 
   if (collected) return null;
@@ -64,7 +67,7 @@ function KeyItem({ playerPosRef, onCollect, collected }) {
           <capsuleGeometry args={[0.10, 0.26, 6, 10]} />
           <meshStandardMaterial color="#cc0000" emissive="#ff2200" emissiveIntensity={3.2} />
         </mesh>
-        <pointLight color="#ff2200" intensity={5} distance={8} decay={2} />
+        <pointLight color="#ff2200" intensity={4} distance={5} decay={2} />
       </group>
       {/* Floor halo ring */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -KEY_POSITION.y + 0.02, 0]}>
@@ -130,7 +133,6 @@ function PlayerBullet({ id, origin, direction, agentRegistryRef, timeScaleRef, o
 
   return (
     <group ref={groupRef}>
-      <pointLight color="#00ff41" intensity={5} distance={7} decay={2} />
       <mesh>
         <sphereGeometry args={[0.11, 6, 4]} />
         <meshStandardMaterial color="#eeffee" emissive="#00ff41" emissiveIntensity={22} />
@@ -442,7 +444,10 @@ function ArchitectBeacon() {
   const beamRef  = useRef();
   const haloRef  = useRef();
   const floorRef = useRef();
+  const frameRef = useRef(0);
   useFrame(({ clock }) => {
+    frameRef.current++;
+    if (frameRef.current % 3 !== 0) return; // 20 Hz — slow pulse needs no more
     const t = clock.elapsedTime;
     const p = 0.5 + 0.5 * Math.sin(t * 0.9);
     if (beamRef.current)  beamRef.current.opacity        = 0.08 + p * 0.07;
@@ -968,7 +973,7 @@ function Scene({
         <>
           <ambientLight color="#e8e4dc" intensity={1.8} />
           <color attach="background" args={['#d5d2c9']} />
-          <fog attach="fog" args={['#d5d2c9', 20, 180]} />
+          <fog attach="fog" args={['#d5d2c9', 18, 155]} />
           <MatrixCorridor />
           {MATRIX_DOORS.map(d => (
             <MatrixDoor key={d.id} {...d} isActive={nearDoor?.id === d.id} />
@@ -1013,7 +1018,7 @@ function Scene({
           })}
 
           {/* Golden beacon + long-range light makes the architect door glow from far down the hallway */}
-          <pointLight position={[0, 5, -210]} color="#ffcc44" intensity={35} distance={250} decay={1.0} />
+          <pointLight position={[0, 5, -210]} color="#ffcc44" intensity={35} distance={80} decay={1.0} />
           <ArchitectBeacon />
 
           <KeyItem playerPosRef={charPosRef} onCollect={onCollectKey} collected={hasKey} />
@@ -1023,7 +1028,6 @@ function Scene({
               spawnOffset={{ z: 22 }}
               spawnDelay={3000}
               shootInterval={3800}
-              firstShotDelay={400}
               playerPosRef={charPosRef}
               dodgeRef={dodgeRef}
               timeScaleRef={timeScaleRef}
@@ -1286,7 +1290,9 @@ function ArchitectDialogue({ onExit }) {
       clearTimer();
       charIdxRef.current = line.text.length;
       setDisplay({ lineIdx: lineIdxRef.current, charIdx: charIdxRef.current });
-      // Schedule auto-advance
+      // If this is the last line, just reveal it — next tap will exit, don't schedule
+      if (isLast) return;
+      // Schedule auto-advance after pause
       timerRef.current = setTimeout(() => {
         if (doneRef.current) return;
         lineIdxRef.current += 1;
@@ -1327,7 +1333,8 @@ function ArchitectDialogue({ onExit }) {
   }, [advance]);
 
   const { lineIdx, charIdx } = display;
-  const line     = ARCHITECT_LINES[lineIdx];
+  const line = ARCHITECT_LINES[lineIdx];
+  if (!line) return null; // guard against rapid tap advancing past last line
   const typed    = line.text.slice(0, charIdx);
   const doneLine = charIdx >= line.text.length;
   const isLast   = lineIdx === ARCHITECT_LINES.length - 1;
@@ -1744,6 +1751,7 @@ export default function MatrixGame({ resumeData }) {
   const [bulletWarn, setBulletWarn] = useState(null);
   const [agentAlert, setAgentAlert] = useState(false);
   const [agentKey, setAgentKey] = useState(0);
+  const agentRespawnTimerRef = useRef(null);
   const [neoHp, setNeoHp] = useState(100);
   const [dead, setDead] = useState(false);
   const [hasKey, setHasKey] = useState(false);
@@ -1867,7 +1875,7 @@ export default function MatrixGame({ resumeData }) {
       document.exitPointerLock?.();
     } else if (modalWasOpenRef.current) {
       modalWasOpenRef.current = false;
-      setTimeout(() => document.querySelector('canvas')?.requestPointerLock(), 80);
+      setTimeout(() => document.querySelector('canvas')?.requestPointerLock?.(), 80);
     }
   }, [openDoor]);
 
@@ -2153,6 +2161,10 @@ export default function MatrixGame({ resumeData }) {
       if (comboCdRef.current > 0)      comboCdRef.current      = Math.max(0, comboCdRef.current      - 0.05);
       if (upperCdRef.current > 0)      upperCdRef.current      = Math.max(0, upperCdRef.current      - 0.05);
       if (shootCdRef.current > 0)      shootCdRef.current      = Math.max(0, shootCdRef.current      - 0.05);
+      // Recoil recovery — gently return pitch toward 0 when not actively shooting
+      if (shootCdRef.current === 0 && pitchRef.current > 0) {
+        pitchRef.current = Math.max(0, pitchRef.current - 0.006);
+      }
     }, 50);
     return () => clearInterval(id);
   }, []);
@@ -2197,28 +2209,19 @@ export default function MatrixGame({ resumeData }) {
     const yaw   = yawRef.current;
     const pitch = pitchRef.current;
 
-    // Reconstruct camera position — mirrors PlayerCharacter TPS setup including shoulder offset
+    // Fire from chest height along exact camera forward — eliminates parallax at all ranges
     const p = charPosRef.current;
-    const camX = p.x + Math.sin(yaw) * 5.2 + Math.cos(yaw) * 0.65;
-    const camY = p.y + 2.6 + pitch * 0.64;
-    const camZ = p.z + Math.cos(yaw) * 5.2 - Math.sin(yaw) * 0.65;
-
-    const fwdX = -Math.sin(yaw) * Math.cos(pitch);
-    const fwdY =  Math.sin(pitch);
-    const fwdZ = -Math.cos(yaw) * Math.cos(pitch);
-
-    const TARGET_DIST = 200;
-    const targetX = camX + fwdX * TARGET_DIST;
-    const targetY = camY + fwdY * TARGET_DIST;
-    const targetZ = camZ + fwdZ * TARGET_DIST;
-
     const origin = p.clone();
     origin.y += 2.0;
 
-    const dir = new THREE.Vector3(targetX - origin.x, targetY - origin.y, targetZ - origin.z).normalize();
+    const dir = new THREE.Vector3(
+      -Math.sin(yaw) * Math.cos(pitch),
+       Math.sin(pitch),
+      -Math.cos(yaw) * Math.cos(pitch),
+    );
     const id = ++playerBulletIdRef.current;
 
-    pitchRef.current = Math.min(pitchRef.current + 0.018, 0.42);
+    pitchRef.current = Math.min(pitchRef.current + 0.010, 0.42);
     setPlayerBullets(prev => [...prev.slice(-6), { id, origin, direction: dir }]);
     stateRef.current.shooting = true;
     stateRef.current.shootT = 0;
@@ -2298,7 +2301,7 @@ export default function MatrixGame({ resumeData }) {
       const id = ++gunIdRef.current;
       setDroppedGuns(prev => [...prev, { id, position: deathPos.clone().setY(0.3) }]);
     }
-    setTimeout(() => setAgentKey(k => k + 1), 3000);
+    agentRespawnTimerRef.current = setTimeout(() => setAgentKey(k => k + 1), 3000);
   }, []);
 
   const handleAgentMelee = useCallback((dmg) => {
@@ -2469,7 +2472,7 @@ export default function MatrixGame({ resumeData }) {
   // Auto-lock pointer when game becomes active — desktop only (mobile has no pointer lock)
   useEffect(() => {
     if (phase === 'playing' && !isMobile) {
-      setTimeout(() => document.querySelector('canvas')?.requestPointerLock(), 200);
+      setTimeout(() => document.querySelector('canvas')?.requestPointerLock?.(), 200);
     }
   }, [phase, isMobile]);
 
@@ -2506,13 +2509,14 @@ export default function MatrixGame({ resumeData }) {
     mobileJoystickRef.current = { x: 0, y: 0 };
     if (mobileSprintRef) mobileSprintRef.current = false;
 
-    // Respawn fresh agent
+    // Cancel any pending agent respawn from handleAgentDead, then spawn fresh
+    clearTimeout(agentRespawnTimerRef.current);
     setAgentKey(k => k + 1);
     setBullets([]);
     setPlayerBullets([]);
 
     if (!isMobile) {
-      setTimeout(() => document.querySelector('canvas')?.requestPointerLock(), 80);
+      setTimeout(() => document.querySelector('canvas')?.requestPointerLock?.(), 80);
     }
   }, [isMobile, charPosRef, yawRef, pitchRef, stateRef, flyingRef,
       mobileJoystickRef, mobileSprintRef]);
@@ -2541,9 +2545,9 @@ export default function MatrixGame({ resumeData }) {
       </div>
 
       <Canvas
-        camera={{ position: [0, 2.5, 5], fov: 75, near: 0.08, far: 380 }}
+        camera={{ position: [0, 2.5, 5], fov: 75, near: 0.08, far: 260 }}
         gl={{ antialias: false, powerPreference: 'high-performance', alpha: false }}
-        dpr={isMobile ? [0.75, 1.0] : [1, 1.2]}
+        dpr={isMobile ? [0.75, 1.0] : [0.85, 1.0]}
         style={{
           filter: canvasFilter,
           transition: 'filter 0.25s ease',

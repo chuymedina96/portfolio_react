@@ -200,9 +200,21 @@ export default function MobileControls({
     }
   }, [paused, yawRef, pitchRef, mobileJoystickRef, mobileSprintRef]);
 
+  // Clear all active touch tracking whenever the game pauses (death, door open).
+  // Without this, joyTouchRef/lookTouchRef stay stale and block new input on unpause.
+  useEffect(() => {
+    if (!paused) return;
+    joyTouchRef.current  = null;
+    lookTouchRef.current = null;
+    mobileJoystickRef.current = { x: 0, y: 0 };
+    if (mobileSprintRef) mobileSprintRef.current = false;
+    setJoyActive(false);
+  }, [paused, mobileJoystickRef, mobileSprintRef]);
+
   // ── Touch end ────────────────────────────────────────────────────────────────
   const handleTouchEnd = useCallback((e) => {
-    if (paused) return;
+    // Do NOT gate on paused — touch releases must always clean up tracking refs
+    // so they aren't stale when the game unpauses.
     for (const t of e.changedTouches) {
       if (joyTouchRef.current?.id === t.identifier) {
         joyTouchRef.current = null;
