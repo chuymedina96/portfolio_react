@@ -313,6 +313,7 @@ function PortfolioPanel({ data }) {
         {projects.map(p => (
           <div key={p.title} className="panel-project-card">
             <img src={`images/portfolio/${p.image}`} alt={p.title}
+              loading="lazy"
               onError={e => { e.target.style.display = 'none'; }}
             />
             <div className="panel-project-info">
@@ -390,7 +391,12 @@ function DockedPanel({ dockedStation, stationColor, onUndock, content }) {
   };
 
   return (
-    <div className="hud-overlay" onClick={handleOverlayClick}>
+    <div
+      className="hud-overlay"
+      onClick={handleOverlayClick}
+      onWheel={e => e.stopPropagation()}
+      onTouchMove={e => e.stopPropagation()}
+    >
       <div className="hud-panel" style={{ '--c': stationColor }}>
         <div className="hud-panel-header">
           <div>

@@ -2548,6 +2548,7 @@ export default function MatrixGame({ resumeData }) {
         camera={{ position: [0, 2.5, 5], fov: 75, near: 0.08, far: 260 }}
         gl={{ antialias: false, powerPreference: 'high-performance', alpha: false }}
         dpr={isMobile ? [0.75, 1.0] : [0.85, 1.0]}
+        frameloop={paused ? 'never' : 'always'}
         style={{
           filter: canvasFilter,
           transition: 'filter 0.25s ease',

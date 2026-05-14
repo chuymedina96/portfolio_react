@@ -9,6 +9,7 @@ node_modules
 
 # production
 
+EastsideCoin.code-workspace
 # misc
 .DS_Store
 .env.local
