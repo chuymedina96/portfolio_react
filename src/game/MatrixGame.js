@@ -1222,7 +1222,7 @@ const ARCHITECT_LINES = [
   { text: "You did not ask whether you were ready. You simply were.", pause: 1100 },
   { text: "Then — a company. Mesa Treasury. Payments, storefronts and bookings for neighborhood shops. Now in App Store review.", pause: 900 },
   { text: "An artificial world where creatures learn to survive — neural networks written by hand, no framework, guided by a language model.", pause: 1000 },
-  { text: "Physical products, designed and manufactured from machines you own, shipped from your own hands.", pause: 900 },
+  { text: "A print service whose quotes come from software you wrote — the geometry read, the price computed, in seconds.", pause: 900 },
   { text: "And this.", pause: 1800 },
   { text: "A three-dimensional, real-time interactive portfolio — built in a game engine — because a static PDF was insufficient to contain the scope of what you have done.", pause: 1100 },
   { text: "Now. The question every recruiter will eventually form — but rarely ask clearly:", pause: 1200 },

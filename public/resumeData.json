@@ -4,7 +4,7 @@
     "occupation": "Fullstack Software Engineer · DevOps Engineer · Founder",
     "description": "I build software that ships — from containerized microservices for federal agencies to consumer apps running on 3D printers I own. I founded Mesa Treasury, a payments and marketplace app for neighborhood businesses, and I build AI research projects like Eden on the side.",
     "image": "me-pic.jpeg",
-    "bio": "I started as an intern in 2017 pulling Docker containers together for Fortune 500 clients. A few years later I was running Kubernetes clusters that serve millions of federal student loan applications. I’ve always just figured it out and kept moving. These days I’m building Mesa Treasury, a point-of-sale and marketplace app that lets local shops take payments, bookings and orders — the iOS app is in App Store review. I also built Eden, an AI research simulation where creatures run on neural networks I wrote from scratch and learn to survive alongside an LLM planner. On the side I design and 3D print custom cat caps out of my own shop, built the STL analyzer that runs my print service, and yes — this portfolio is a Matrix game I built from scratch. Chicago born and raised. I build things I’m proud of.",
+    "bio": "I started as an intern in 2017 pulling Docker containers together for Fortune 500 clients. A few years later I was running Kubernetes clusters that serve millions of federal student loan applications. I’ve always just figured it out and kept moving. These days I’m building Mesa Treasury, a point-of-sale and marketplace app that lets local shops take payments, bookings and orders — the iOS app is in App Store review. I also built Eden, an AI research simulation where creatures run on neural networks I wrote from scratch and learn to survive alongside an LLM planner. On the side I built the STL analyzer that runs my 3D print service, and yes — this portfolio is a Matrix game I built from scratch. Chicago born and raised. I build things I’m proud of.",
     "contactmessage": "Get in touch with me if you want to talk!",
     "email": "chuymedina96@gmail.com",
     "phone": "733-951-1650",
@@ -144,13 +144,6 @@
         "image": "chicago3dprintworks.png",
         "url": "https://chicago3dprintworks.onrender.com/",
         "github": "https://github.com/chuymedina96/chicago-3d-printworks"
-      },
-      {
-        "title": "3D Catcap Lab",
-        "category": "I designed, manufactured, and ship every cat cap myself — printed in-house on my own 3D printers. Built the full e-commerce platform in React with Stripe.js for payments and a custom cap configurator so customers can design their own before ordering. From code to physical product, end to end.",
-        "image": "3dcatcaplab.png",
-        "url": "https://catcaps-web.onrender.com/",
-        "github": "https://github.com/chuymedina96/3dcatcaps-frontend"
       }
     ]
   },
